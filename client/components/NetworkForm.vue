@@ -21,7 +21,12 @@
 				<div class="connect-row">
 					<label for="connect:host">Server</label>
 					<div class="input-wrap">
-						<input id="connect:host" v-model="defaults.host" type="hidden" />
+						<input
+							id="connect:host"
+							name="host"
+							v-model="defaults.host"
+							type="hidden"
+						/>
 						<input type="text" :value="renderHostname" disabled class="input" />
 					</div>
 				</div>
