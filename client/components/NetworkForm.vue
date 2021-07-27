@@ -20,17 +20,9 @@
 				<h2>Connect to your ZNCHost.com Service</h2>
 				<div class="connect-row">
 					<label for="connect:host">Server</label>
-					<div class="input-wrap" style="display: flex">
-						<input
-							id="connect:host"
-							v-model="defaults.host"
-							class="input"
-							name="host"
-							aria-label="Server address"
-							maxlength="255"
-							required
-						/>
-						<div style="align-self: center">.{{ config.znchost.suffix }}</div>
+					<div class="input-wrap">
+						<input id="connect:host" v-model="defaults.host" type="hidden" />
+						<input type="text" :value="renderHostname" disabled class="input" />
 					</div>
 				</div>
 				<div class="connect-row">
@@ -513,6 +505,8 @@ export default {
 		return {
 			config: this.$store.state.serverConfiguration,
 			previousUsername: this.defaults.username,
+			renderHostname:
+				this.defaults.host + "." + this.$store.state.serverConfiguration.znchost.suffix,
 			displayPasswordField: false,
 		};
 	},

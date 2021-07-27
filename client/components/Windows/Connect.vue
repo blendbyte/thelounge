@@ -76,66 +76,18 @@ export default {
 		parseOverrideParams(params) {
 			const parsedParams = {};
 
-			for (let key of Object.keys(params)) {
-				let value = params[key];
+			// Get hostname from URL
+			let hostname = window.location.hostname;
+			let matches = hostname.match(
+				new RegExp("^(.*)\." + this.$store.state.serverConfiguration.znchost.suffix + "$")
+			);
+			if (matches !== null) {
+				parsedParams.host = matches[1];
+			}
 
-				// Param can contain multiple values in an array if its supplied more than once
-				if (Array.isArray(value)) {
-					value = value[0];
-				}
-
-				// Support `channels` as a compatibility alias with other clients
-				if (key === "channels") {
-					key = "join";
-				}
-
-				if (
-					!Object.prototype.hasOwnProperty.call(
-						this.$store.state.serverConfiguration.defaults,
-						key
-					)
-				) {
-					continue;
-				}
-
-				// When the network is locked, URL overrides should not affect disabled fields
-				if (
-					this.$store.state.serverConfiguration.lockNetwork &&
-					["name", "host", "port", "tls", "rejectUnauthorized"].includes(key)
-				) {
-					continue;
-				}
-
-				if (key === "join") {
-					value = value
-						.split(",")
-						.map((chan) => {
-							if (!chan.match(/^[#&!+]/)) {
-								return `#${chan}`;
-							}
-
-							return chan;
-						})
-						.join(", ");
-				}
-
-				// Override server provided defaults with parameters passed in the URL if they match the data type
-				switch (typeof this.$store.state.serverConfiguration.defaults[key]) {
-					case "boolean":
-						if (value === "0" || value === "false") {
-							parsedParams[key] = false;
-						} else {
-							parsedParams[key] = !!value;
-						}
-
-						break;
-					case "number":
-						parsedParams[key] = Number(value);
-						break;
-					case "string":
-						parsedParams[key] = String(value);
-						break;
-				}
+			// Username via param
+			if (typeof params.username !== "undefined") {
+				parsedParams.username = String(params.username);
 			}
 
 			return parsedParams;
