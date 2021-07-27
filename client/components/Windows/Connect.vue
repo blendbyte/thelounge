@@ -77,10 +77,11 @@ export default {
 			const parsedParams = {};
 
 			// Get hostname from URL
-			let hostname = window.location.hostname;
-			let matches = hostname.match(
-				new RegExp("^(.*)\." + this.$store.state.serverConfiguration.znchost.suffix + "$")
+			const hostname = window.location.hostname;
+			const matches = hostname.match(
+				new RegExp("^(.*)." + this.$store.state.serverConfiguration.znchost.suffix + "$")
 			);
+
 			if (matches !== null) {
 				parsedParams.host = matches[1];
 			}
