@@ -91,6 +91,8 @@ function updateVersions(response) {
 }
 
 function checkForUpdates(manager) {
+	return;
+
 	fetch().then((versionData) => {
 		if (!module.exports.isUpdateAvailable) {
 			// Check for updates every 24 hours + random jitter of <3 hours
