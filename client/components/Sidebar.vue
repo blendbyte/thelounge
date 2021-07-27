@@ -33,6 +33,7 @@
 			<span
 				class="tooltipped tooltipped-n tooltipped-no-touch"
 				aria-label="Connect to network"
+				v-if="!config.znchost.enabled"
 				><router-link
 					to="/connect"
 					tag="button"
@@ -93,6 +94,7 @@ export default {
 	data() {
 		return {
 			isDevelopment: process.env.NODE_ENV !== "production",
+			config: this.$store.state.serverConfiguration,
 		};
 	},
 	mounted() {

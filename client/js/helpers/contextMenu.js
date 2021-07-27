@@ -34,12 +34,12 @@ export function generateChannelContextMenu($root, channel, network) {
 	if (channel.type === "lobby") {
 		items = [
 			...items,
-			{
-				label: "Edit this network…",
-				type: "item",
-				class: "edit",
-				link: `/edit-network/${network.uuid}`,
-			},
+			// {
+			// 	label: "Edit this network…",
+			// 	type: "item",
+			// 	class: "edit",
+			// 	link: `/edit-network/${network.uuid}`,
+			// },
 			{
 				label: "Join a channel…",
 				type: "item",
