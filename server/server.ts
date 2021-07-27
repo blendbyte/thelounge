@@ -522,7 +522,7 @@ function initializeClient(
 				irc.quit();
 			});
 			irc.on("close", function (event) {
-				if (event === true) {
+				if (event === true || netdata.networks.length > 0) {
 					netdata.okay = true;
 					cb(netdata);
 				} else {
