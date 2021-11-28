@@ -71,7 +71,7 @@
 						target="_blank"
 						rel="noopener"
 						class="website-link"
-						>TheLounge Website</a
+						>The Lounge Website</a
 					>
 				</p>
 				<p>
@@ -80,7 +80,7 @@
 						target="_blank"
 						rel="noopener"
 						class="documentation-link"
-						>TheLounge Documentation</a
+						>The Lounge Documentation</a
 					>
 				</p>
 			</div>
