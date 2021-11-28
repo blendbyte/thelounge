@@ -71,7 +71,7 @@
 						target="_blank"
 						rel="noopener"
 						class="website-link"
-						>Website</a
+						>TheLounge Website</a
 					>
 				</p>
 				<p>
@@ -80,18 +80,39 @@
 						target="_blank"
 						rel="noopener"
 						class="documentation-link"
-						>Documentation</a
+						>TheLounge Documentation</a
 					>
 				</p>
-				<p>
-					<a
-						href="https://github.com/thelounge/thelounge/issues/new"
-						target="_blank"
-						rel="noopener"
-						class="report-issue-link"
-						>Report an issue…</a
-					>
-				</p>
+			</div>
+
+			<h2 v-if="isTouch">Gestures</h2>
+
+			<div v-if="isTouch" class="help-item">
+				<div class="subject gesture">Single-Finger Swipe Left</div>
+				<div class="description">
+					<p>Hide sidebar.</p>
+				</div>
+			</div>
+
+			<div v-if="isTouch" class="help-item">
+				<div class="subject gesture">Single-Finger Swipe Right</div>
+				<div class="description">
+					<p>Show sidebar.</p>
+				</div>
+			</div>
+
+			<div v-if="isTouch" class="help-item">
+				<div class="subject gesture">Two-Finger Swipe Left</div>
+				<div class="description">
+					<p>Switch to the next window in the channel list.</p>
+				</div>
+			</div>
+
+			<div v-if="isTouch" class="help-item">
+				<div class="subject gesture">Two-Finger Swipe Right</div>
+				<div class="description">
+					<p>Switch to the previous window in the channel list.</p>
+				</div>
 			</div>
 
 			<h2>Keyboard Shortcuts</h2>
@@ -203,6 +224,16 @@
 				</div>
 				<div class="description">
 					<p>Toggle recent mentions popup.</p>
+				</div>
+			</div>
+
+			<div class="help-item">
+				<div class="subject">
+					<span v-if="!isApple"><kbd>Alt</kbd> <kbd>/</kbd></span>
+					<span v-else><kbd>⌥</kbd> <kbd>/</kbd></span>
+				</div>
+				<div class="description">
+					<p>Switch to the help menu.</p>
 				</div>
 			</div>
 
@@ -690,7 +721,7 @@
 				</div>
 			</div>
 
-			<div class="help-item">
+			<div v-if="$store.state.settings.searchEnabled" class="help-item">
 				<div class="subject">
 					<code>/search query</code>
 				</div>
@@ -771,6 +802,7 @@ export default {
 	data() {
 		return {
 			isApple: navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) || false,
+			isTouch: navigator.maxTouchPoints > 0,
 		};
 	},
 };
