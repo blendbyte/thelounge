@@ -18,6 +18,7 @@ const Identification = require("./identification");
 const changelog = require("./plugins/changelog");
 const inputs = require("./plugins/inputs");
 const Auth = require("./plugins/auth");
+const IrcFramework = require("irc-framework");
 
 const themes = require("./plugins/packages/themes");
 themes.loadLocalThemes();
@@ -386,6 +387,61 @@ function initializeClient(socket, client, token, lastMessage, openChannel) {
 		}
 	});
 
+	if (Helper.config.znchost.enabled) {
+		socket.on("znc:getnetworks", (data, cb) => {
+			const netdata = {okay: false, error: "", networks: []};
+
+			const irc = new IrcFramework.Client();
+			irc.connect({
+				host: data.host + "." + Helper.config.znchost.suffix,
+				port: Helper.config.znchost.port,
+				tls: Helper.config.znchost.tls,
+				nick: data.username,
+				username: data.username,
+				password: data.password,
+				version: false,
+				outgoing_addr: Helper.config.bind,
+				auto_reconnect: false,
+				rejectUnauthorized: true,
+			});
+			irc.on("message", function (event) {
+				if (event.type !== "privmsg" && event.nick !== "*status") {
+					return;
+				}
+
+				let match = event.message.match(/^\|(.*)\|(.*)\|(.*)\|(.*)\|(.*)\|$/);
+
+				if (match === null) {
+					return;
+				}
+
+				match = match.map(function (n) {
+					return n.trim();
+				});
+
+				if (match.length !== 6 || match[1] === "Network") {
+					return;
+				}
+
+				netdata.networks.push(match[1]);
+			});
+			irc.on("registered", function () {
+				irc.say("*status", "listnetworks");
+				irc.quit();
+			});
+			irc.on("close", function (event) {
+				if (event === true || netdata.networks.length > 0) {
+					netdata.okay = true;
+					cb(netdata);
+				} else {
+					netdata.okay = false;
+					netdata.error = "Unable to connect. Maybe you are using a wrong password?";
+					cb(netdata);
+				}
+			});
+		});
+	}
+
 	socket.on("network:new", (data) => {
 		if (_.isPlainObject(data)) {
 			// prevent people from overriding webirc settings
@@ -752,7 +808,13 @@ function initializeClient(socket, client, token, lastMessage, openChannel) {
 }
 
 function getClientConfiguration() {
-	const config = _.pick(Helper.config, ["public", "lockNetwork", "useHexIp", "prefetch"]);
+	const config = _.pick(Helper.config, [
+		"public",
+		"lockNetwork",
+		"useHexIp",
+		"prefetch",
+		"znchost",
+	]);
 
 	config.fileUpload = Helper.config.fileUpload.enable;
 	config.ldapEnabled = Helper.config.ldap.enable;
