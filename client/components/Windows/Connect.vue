@@ -30,6 +30,7 @@ export default {
 			config: this.$store.state.serverConfiguration,
 			disabled: false,
 			errorMessage: "",
+			retriedNetworks: false,
 			defaults,
 		};
 	},
@@ -40,33 +41,45 @@ export default {
 				this.disabled = true;
 				this.errorMessage = "";
 
-				// Get all networks
-				socket.emit("znc:getnetworks", data, function (ret) {
-					if (ret.okay === false) {
-						that.disabled = false;
-						that.errorMessage = ret.error;
-						return;
-					}
+				const sendFunc = () => {
+					// Get all networks
+					socket.emit("znc:getnetworks", data, function (ret) {
+						if (ret.okay === false) {
+							that.disabled = false;
+							that.errorMessage = ret.error;
+							return;
+						}
 
-					if (ret.networks.length === 0) {
-						that.errorMessage =
-							"Login successful, but you do not have any IRC networks configured yet. Please ask your administrator.";
-						return;
-					}
+						if (ret.networks.length === 0) {
+							if (!that.retriedNetworks) {
+								that.retriedNetworks = true;
+								sendFunc();
+								return;
+							}
 
-					ret.networks.forEach((net) => {
-						socket.emit("network:new", {
-							name: net,
-							host: data.host + "." + that.config.znchost.suffix,
-							port: that.config.znchost.port,
-							tls: that.config.znchost.tls,
-							rejectUnauthorized: true,
-							username: data.username + "/" + net,
-							password: data.password,
-							nickname: data.username,
+							that.errorMessage =
+								"Login successful, but you do not have any IRC networks configured yet. Please ask your administrator.";
+							that.retriedNetworks = false;
+							that.disabled = false;
+							return;
+						}
+
+						ret.networks.forEach((net) => {
+							socket.emit("network:new", {
+								name: net,
+								host: data.host + "." + that.config.znchost.suffix,
+								port: that.config.znchost.port,
+								tls: that.config.znchost.tls,
+								rejectUnauthorized: true,
+								username: data.username + "/" + net,
+								password: data.password,
+								nickname: data.username,
+							});
 						});
 					});
-				});
+				};
+
+				sendFunc();
 
 				return;
 			}
