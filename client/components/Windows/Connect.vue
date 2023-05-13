@@ -91,6 +91,11 @@ export default defineComponent({
 			for (let key of Object.keys(params)) {
 				let value = params[key];
 
+				// Param can contain multiple values in an array if its supplied more than once
+				if (Array.isArray(value)) {
+					value = value[0];
+				}
+
 				// Get hostname from URL
 				const hostname = window.location.hostname;
 				const matches = hostname.match(
