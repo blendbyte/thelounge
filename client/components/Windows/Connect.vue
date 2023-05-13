@@ -88,19 +88,17 @@ export default defineComponent({
 
 			const parsedParams: Record<string, any> = {};
 
-			// Get hostname from URL
-			const hostname = window.location.hostname;
-			const matches = hostname.match(
-				new RegExp("^(.*)." + this.$store.state.serverConfiguration.znchost.suffix + "$")
-			);
+			for (let key of Object.keys(params)) {
+				let value = params[key];
 
-			if (matches !== null) {
-				parsedParams.host = matches[1];
-			}
-
-			if (matches !== null) {
-				parsedParams.host = matches[1];
-			}
+				// Get hostname from URL
+				const hostname = window.location.hostname;
+				const matches = hostname.match(
+					new RegExp("^(.*)." + store.state.serverConfiguration?.znchost.suffix + "$")
+				);
+				if (matches !== null) {
+					parsedParams.host = matches[1];
+				}
 
 				// Support `channels` as a compatibility alias with other clients
 				if (key === "channels") {
