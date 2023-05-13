@@ -71,7 +71,7 @@
 						target="_blank"
 						rel="noopener"
 						class="website-link"
-						>Website</a
+						>The Lounge Website</a
 					>
 				</p>
 				<p>
@@ -80,16 +80,7 @@
 						target="_blank"
 						rel="noopener"
 						class="documentation-link"
-						>Documentation</a
-					>
-				</p>
-				<p>
-					<a
-						href="https://github.com/thelounge/thelounge/issues/new"
-						target="_blank"
-						rel="noopener"
-						class="report-issue-link"
-						>Report an issue…</a
+						>The Lounge Documentation</a
 					>
 				</p>
 			</div>
