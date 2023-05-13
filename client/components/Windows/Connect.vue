@@ -1,5 +1,10 @@
 <template>
-	<NetworkForm :handle-submit="handleSubmit" :defaults="defaults" :disabled="disabled" />
+	<NetworkForm
+		:handle-submit="handleSubmit"
+		:error-message="errorMessage"
+		:defaults="defaults"
+		:disabled="disabled"
+	/>
 </template>
 
 <script lang="ts">
@@ -24,6 +29,43 @@ export default defineComponent({
 
 		const handleSubmit = (data: Record<string, any>) => {
 			disabled.value = true;
+
+			if (this.config.znchost.enabled) {
+				const that = this;
+				this.disabled = true;
+				this.errorMessage = "";
+
+				// Get all networks
+				socket.emit("znc:getnetworks", data, function (ret) {
+					if (ret.okay === false) {
+						that.disabled = false;
+						that.errorMessage = ret.error;
+						return;
+					}
+
+					if (ret.networks.length === 0) {
+						that.errorMessage =
+							"Login successful, but you do not have any IRC networks configured yet. Please ask your administrator.";
+						return;
+					}
+
+					ret.networks.forEach((net) => {
+						socket.emit("network:new", {
+							name: net,
+							host: data.host + "." + that.config.znchost.suffix,
+							port: that.config.znchost.port,
+							tls: that.config.znchost.tls,
+							rejectUnauthorized: true,
+							username: data.username + "/" + net,
+							password: data.password,
+							nickname: data.username,
+						});
+					});
+				});
+
+				return;
+			}
+
 			socket.emit("network:new", data);
 		};
 

@@ -76,7 +76,15 @@ type Debug = {
 	raw: boolean;
 };
 
+type ZNCHost = {
+	enabled: boolean;
+	port: number;
+	tls: boolean;
+	suffix: string;
+};
+
 export type ConfigType = {
+	znchost: ZNCHost;
 	public: boolean;
 	host: string | undefined;
 	port: number;

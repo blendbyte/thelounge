@@ -33,6 +33,7 @@
 			<span
 				class="tooltipped tooltipped-n tooltipped-no-touch"
 				aria-label="Connect to network"
+				v-if="!config.znchost.enabled"
 				><router-link
 					v-slot:default="{navigate, isActive}"
 					to="/connect"

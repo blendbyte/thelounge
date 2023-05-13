@@ -17,6 +17,12 @@ module.exports = {
 	//
 	// This value is set to `false` by default.
 	public: false,
+	znchost: {
+		enabled: false,
+		port: 1234,
+		tls: true,
+		suffix: "",
+	},
 
 	// ### `host`
 	//
