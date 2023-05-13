@@ -6,16 +6,7 @@ package-lock.json
 
 coverage/
 public/
-<<<<<<< HEAD
 packages/
 config.js
 vapid.json
-=======
-<<<<<<< HEAD
 dist/
-=======
-packages/
-config.js
-vapid.json
->>>>>>> 9e062133 (wip)
->>>>>>> thelounge-master
