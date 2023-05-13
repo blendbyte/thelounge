@@ -76,8 +76,14 @@ export default defineComponent({
 
 			const parsedParams: Record<string, any> = {};
 
-			for (let key of Object.keys(params)) {
-				let value = params[key];
+			// Get hostname from URL
+			let hostname = window.location.hostname;
+			let matches = hostname.match(
+				new RegExp("^(.*)\." + this.$store.state.serverConfiguration.znchost.suffix + "$")
+			);
+			if (matches !== null) {
+				parsedParams.host = matches[1];
+			}
 
 				// Param can contain multiple values in an array if its supplied more than once
 				if (Array.isArray(value)) {

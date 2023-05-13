@@ -524,12 +524,12 @@ export default defineComponent({
 		disabled: Boolean,
 		errorMessage: String,
 	},
+
 	setup(props) {
 		const store = useStore();
 		const config = ref(store.state.serverConfiguration);
 		const previousUsername = ref(props.defaults?.username);
 		const displayPasswordField = ref(false);
-
 		const publicPassword = ref<HTMLInputElement | null>(null);
 
 		watch(displayPasswordField, (newValue) => {
