@@ -48,7 +48,7 @@ type IndexTemplateConfiguration = ServerConfiguration & {
 
 export type ClientConfiguration = Pick<
 	ConfigType,
-	"public" | "lockNetwork" | "useHexIp" | "prefetch" | "defaults"
+	"public" | "lockNetwork" | "useHexIp" | "prefetch" | "defaults" | "znchost"
 > & {
 	fileUpload: boolean;
 	ldapEnabled: boolean;
@@ -481,7 +481,12 @@ function initializeClient(
 
 	if (Config.values.znchost.enabled) {
 		socket.on("znc:getnetworks", (data, cb) => {
-			const netdata = {okay: false, error: "", networks: []};
+			type Netdata = {
+				okay: boolean;
+				error: string;
+				networks: Array<string>;
+			};
+			const netdata: Netdata = {okay: false, error: "", networks: []};
 
 			const irc = new IrcFramework.Client({});
 			irc.connect({
