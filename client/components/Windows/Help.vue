@@ -8,19 +8,26 @@
 
 			<h2 class="help-version-title">
 				<span>About The Lounge</span>
-				<small>
-					v{{ store.state.serverConfiguration?.version }} (<router-link
-						id="view-changelog"
-						to="/changelog"
-						>release notes</router-link
-					>)
-				</small>
+				<small> v{{ store.state.serverConfiguration?.version }} </small>
 			</h2>
 
 			<div class="about">
-				<VersionChecker />
+				<div
+					style="margin-bottom: 1rem"
+					v-if="$store.state.serverConfiguration.znchost.enabled"
+				>
+					This version of The Lounge has been slightly modified by
+					<a href="https://znchost.com" target="_blank">ZNCHost.com</a> to accommodate our
+					use-case. So please refer to our support first if you have any issues.
+				</div>
+				<VersionChecker v-if="!$store.state.serverConfiguration.znchost.enabled" />
 
-				<template v-if="store.state.serverConfiguration?.gitCommit">
+				<template
+					v-if="
+						!store.state.serverConfiguration.znchost.enabled &&
+						store.state.serverConfiguration?.gitCommit
+					"
+				>
 					<p>
 						The Lounge is running from source (<a
 							:href="`https://github.com/thelounge/thelounge/tree/${store.state.serverConfiguration?.gitCommit}`"

@@ -110,6 +110,7 @@ function updateVersions(response: Response<string>) {
 }
 
 function checkForUpdates(manager: ClientManager) {
+	return;
 	fetch()
 		.then((versionData) => {
 			if (!module.exports.isUpdateAvailable) {
