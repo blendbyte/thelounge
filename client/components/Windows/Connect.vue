@@ -7,11 +7,14 @@
 	/>
 </template>
 
-<script>
-import socket from "../../js/socket";
-import NetworkForm from "../NetworkForm.vue";
+<script lang="ts">
+import {defineComponent, ref} from "vue";
 
-export default {
+import socket from "../../js/socket";
+import {useStore} from "../../js/store";
+import NetworkForm, {NetworkFormDefaults} from "../NetworkForm.vue";
+
+export default defineComponent({
 	name: "Connect",
 	components: {
 		NetworkForm,
@@ -19,23 +22,14 @@ export default {
 	props: {
 		queryParams: Object,
 	},
-	data() {
-		// Merge settings from url params into default settings
-		const defaults = Object.assign(
-			{},
-			this.$store.state.serverConfiguration.defaults,
-			this.parseOverrideParams(this.queryParams)
-		);
-		return {
-			config: this.$store.state.serverConfiguration,
-			disabled: false,
-			errorMessage: "",
-			retriedNetworks: false,
-			defaults,
-		};
-	},
-	methods: {
-		handleSubmit(data) {
+	setup(props) {
+		const store = useStore();
+
+		const disabled = ref(false);
+
+		const handleSubmit = (data: Record<string, any>) => {
+			disabled.value = true;
+
 			if (this.config.znchost.enabled) {
 				const that = this;
 				this.disabled = true;
@@ -85,9 +79,14 @@ export default {
 			}
 
 			socket.emit("network:new", data);
-		},
-		parseOverrideParams(params) {
-			const parsedParams = {};
+		};
+
+		const parseOverrideParams = (params?: Record<string, string>) => {
+			if (!params) {
+				return {};
+			}
+
+			const parsedParams: Record<string, any> = {};
 
 			// Get hostname from URL
 			const hostname = window.location.hostname;
@@ -99,13 +98,80 @@ export default {
 				parsedParams.host = matches[1];
 			}
 
-			// Username via param
-			if (typeof params.username !== "undefined") {
-				parsedParams.username = String(params.username);
+			if (matches !== null) {
+				parsedParams.host = matches[1];
+			}
+
+				// Support `channels` as a compatibility alias with other clients
+				if (key === "channels") {
+					key = "join";
+				}
+
+				if (
+					!Object.prototype.hasOwnProperty.call(
+						store.state.serverConfiguration?.defaults,
+						key
+					)
+				) {
+					continue;
+				}
+
+				// When the network is locked, URL overrides should not affect disabled fields
+				if (
+					store.state.serverConfiguration?.lockNetwork &&
+					["name", "host", "port", "tls", "rejectUnauthorized"].includes(key)
+				) {
+					continue;
+				}
+
+				if (key === "join") {
+					value = value
+						.split(",")
+						.map((chan) => {
+							if (!chan.match(/^[#&!+]/)) {
+								return `#${chan}`;
+							}
+
+							return chan;
+						})
+						.join(", ");
+				}
+
+				// Override server provided defaults with parameters passed in the URL if they match the data type
+				switch (typeof store.state.serverConfiguration?.defaults[key]) {
+					case "boolean":
+						if (value === "0" || value === "false") {
+							parsedParams[key] = false;
+						} else {
+							parsedParams[key] = !!value;
+						}
+
+						break;
+					case "number":
+						parsedParams[key] = Number(value);
+						break;
+					case "string":
+						parsedParams[key] = String(value);
+						break;
+				}
 			}
 
 			return parsedParams;
-		},
+		};
+
+		const defaults = ref<Partial<NetworkFormDefaults>>(
+			Object.assign(
+				{},
+				store.state.serverConfiguration?.defaults,
+				parseOverrideParams(props.queryParams)
+			)
+		);
+
+		return {
+			defaults,
+			disabled,
+			handleSubmit,
+		};
 	},
-};
+});
 </script>

@@ -8,7 +8,7 @@
 
 			<h2 class="help-version-title">
 				<span>About The Lounge</span>
-				<small> v{{ $store.state.serverConfiguration.version }} </small>
+				<small> v{{ store.state.serverConfiguration?.version }} </small>
 			</h2>
 
 			<div class="about">
@@ -24,16 +24,16 @@
 
 				<template
 					v-if="
-						!$store.state.serverConfiguration.znchost.enabled &&
-						$store.state.serverConfiguration.gitCommit
+						!store.state.serverConfiguration.znchost.enabled &&
+						store.state.serverConfiguration?.gitCommit
 					"
 				>
 					<p>
 						The Lounge is running from source (<a
-							:href="`https://github.com/thelounge/thelounge/tree/${$store.state.serverConfiguration.gitCommit}`"
+							:href="`https://github.com/thelounge/thelounge/tree/${store.state.serverConfiguration?.gitCommit}`"
 							target="_blank"
 							rel="noopener"
-							>commit <code>{{ $store.state.serverConfiguration.gitCommit }}</code></a
+							>commit <code>{{ store.state.serverConfiguration?.gitCommit }}</code></a
 						>).
 					</p>
 
@@ -41,11 +41,11 @@
 						<li>
 							Compare
 							<a
-								:href="`https://github.com/thelounge/thelounge/compare/${$store.state.serverConfiguration.gitCommit}...master`"
+								:href="`https://github.com/thelounge/thelounge/compare/${store.state.serverConfiguration?.gitCommit}...master`"
 								target="_blank"
 								rel="noopener"
 								>between
-								<code>{{ $store.state.serverConfiguration.gitCommit }}</code> and
+								<code>{{ store.state.serverConfiguration?.gitCommit }}</code> and
 								<code>master</code></a
 							>
 							to see what you are missing
@@ -53,12 +53,12 @@
 						<li>
 							Compare
 							<a
-								:href="`https://github.com/thelounge/thelounge/compare/${$store.state.serverConfiguration.version}...${$store.state.serverConfiguration.gitCommit}`"
+								:href="`https://github.com/thelounge/thelounge/compare/${store.state.serverConfiguration?.version}...${store.state.serverConfiguration?.gitCommit}`"
 								target="_blank"
 								rel="noopener"
 								>between
-								<code>{{ $store.state.serverConfiguration.version }}</code> and
-								<code>{{ $store.state.serverConfiguration.gitCommit }}</code></a
+								<code>{{ store.state.serverConfiguration?.version }}</code> and
+								<code>{{ store.state.serverConfiguration?.gitCommit }}</code></a
 							>
 							to see your local changes
 						</li>
@@ -572,10 +572,13 @@
 
 			<div class="help-item">
 				<div class="subject">
-					<code>/join channel</code>
+					<code>/join channel [password]</code>
 				</div>
 				<div class="description">
-					<p>Join a channel.</p>
+					<p>
+						Join a channel. Password is only needed in protected channels and can
+						usually be omitted.
+					</p>
 				</div>
 			</div>
 
@@ -747,7 +750,7 @@
 				</div>
 			</div>
 
-			<div v-if="$store.state.settings.searchEnabled" class="help-item">
+			<div v-if="store.state.settings.searchEnabled" class="help-item">
 				<div class="subject">
 					<code>/search query</code>
 				</div>
@@ -827,21 +830,28 @@
 	</div>
 </template>
 
-<script>
+<script lang="ts">
+import {defineComponent, ref} from "vue";
+import {useStore} from "../../js/store";
 import SidebarToggle from "../SidebarToggle.vue";
 import VersionChecker from "../VersionChecker.vue";
 
-export default {
+export default defineComponent({
 	name: "Help",
 	components: {
 		SidebarToggle,
 		VersionChecker,
 	},
-	data() {
+	setup() {
+		const store = useStore();
+		const isApple = navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) || false;
+		const isTouch = navigator.maxTouchPoints > 0;
+
 		return {
-			isApple: navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) || false,
-			isTouch: navigator.maxTouchPoints > 0,
+			isApple,
+			isTouch,
+			store,
 		};
 	},
-};
+});
 </script>

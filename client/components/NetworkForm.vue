@@ -11,7 +11,9 @@
 				</template>
 				<template v-else>
 					Connect
-					<template v-if="config.lockNetwork && $store.state.serverConfiguration.public">
+					<template
+						v-if="config?.lockNetwork && store?.state.serverConfiguration?.public"
+					>
 						to {{ defaults.name }}
 					</template>
 				</template>
@@ -20,14 +22,17 @@
 				<h2>Connect to your ZNCHost.com Service</h2>
 				<div class="connect-row">
 					<label for="connect:host">Server</label>
-					<div class="input-wrap">
+					<div class="input-wrap" style="display: flex">
 						<input
 							id="connect:host"
+							v-model.trim="defaults.host"
+							class="input"
 							name="host"
-							v-model="defaults.host"
-							type="hidden"
+							aria-label="Server address"
+							maxlength="255"
+							required
 						/>
-						<input type="text" :value="renderHostname" disabled class="input" />
+						<div style="align-self: center">.{{ config.znchost.suffix }}</div>
 					</div>
 				</div>
 				<div class="connect-row">
@@ -35,7 +40,7 @@
 					<input
 						id="connect:username"
 						ref="usernameInput"
-						v-model="defaults.username"
+						v-model.trim="defaults.username"
 						class="input username"
 						name="username"
 						maxlength="100"
@@ -490,92 +495,135 @@ the server tab on new connection"
 }
 </style>
 
-<script>
+<script lang="ts">
 import RevealPassword from "./RevealPassword.vue";
 import SidebarToggle from "./SidebarToggle.vue";
+import {defineComponent, nextTick, PropType, ref, watch} from "vue";
+import {useStore} from "../js/store";
+import {ClientNetwork} from "../js/types";
 
-export default {
+export type NetworkFormDefaults = Partial<ClientNetwork> & {
+	join?: string;
+};
+
+export default defineComponent({
 	name: "NetworkForm",
 	components: {
 		RevealPassword,
 		SidebarToggle,
 	},
 	props: {
-		handleSubmit: Function,
-		defaults: Object,
+		handleSubmit: {
+			type: Function as PropType<(network: ClientNetwork) => void>,
+			required: true,
+		},
+		defaults: {
+			type: Object as PropType<NetworkFormDefaults>,
+			required: true,
+		},
 		disabled: Boolean,
 		errorMessage: String,
 	},
-	data() {
-		return {
-			config: this.$store.state.serverConfiguration,
-			previousUsername: this.defaults.username,
-			renderHostname:
-				this.defaults.host + "." + this.$store.state.serverConfiguration.znchost.suffix,
-			displayPasswordField: false,
-		};
-	},
-	watch: {
-		displayPasswordField(value) {
-			if (value) {
-				this.$nextTick(() => this.$refs.publicPassword.focus());
-			}
-		},
-		"defaults.commands"() {
-			this.$nextTick(this.resizeCommandsInput);
-		},
-		"defaults.tls"(isSecureChecked) {
-			const ports = [6667, 6697];
-			const newPort = isSecureChecked ? 0 : 1;
 
-			// If you disable TLS and current port is 6697,
-			// set it to 6667, and vice versa
-			if (this.defaults.port === ports[newPort]) {
-				this.defaults.port = ports[1 - newPort];
-			}
-		},
-	},
-	methods: {
-		setSaslAuth(type) {
-			this.defaults.sasl = type;
-		},
-		onNickChanged(event) {
-			// Username input is not available when useHexIp is set
-			if (!this.$refs.usernameInput) {
-				return;
-			}
+	setup(props) {
+		const store = useStore();
+		const config = ref(store.state.serverConfiguration);
+		const previousUsername = ref(props.defaults?.username);
+		const displayPasswordField = ref(false);
+		const publicPassword = ref<HTMLInputElement | null>(null);
 
-			if (
-				!this.$refs.usernameInput.value ||
-				this.$refs.usernameInput.value === this.previousUsername
-			) {
-				this.$refs.usernameInput.value = event.target.value;
+		watch(displayPasswordField, (newValue) => {
+			if (newValue) {
+				void nextTick(() => {
+					publicPassword.value?.focus();
+				});
 			}
+		});
 
-			this.previousUsername = event.target.value;
-		},
-		onSubmit(event) {
-			const formData = new FormData(event.target);
-			const data = {};
+		const commandsInput = ref<HTMLInputElement | null>(null);
 
-			for (const item of formData.entries()) {
-				data[item[0]] = item[1];
-			}
-
-			this.handleSubmit(data);
-		},
-		resizeCommandsInput() {
-			if (!this.$refs.commandsInput) {
+		const resizeCommandsInput = () => {
+			if (!commandsInput.value) {
 				return;
 			}
 
 			// Reset height first so it can down size
-			this.$refs.commandsInput.style.height = "";
+			commandsInput.value.style.height = "";
 
 			// 2 pixels to account for the border
-			this.$refs.commandsInput.style.height =
-				Math.ceil(this.$refs.commandsInput.scrollHeight + 2) + "px";
-		},
+			commandsInput.value.style.height = `${Math.ceil(
+				commandsInput.value.scrollHeight + 2
+			)}px`;
+		};
+
+		watch(
+			() => props.defaults?.commands,
+			() => {
+				void nextTick(() => {
+					resizeCommandsInput();
+				});
+			}
+		);
+
+		watch(
+			() => props.defaults?.tls,
+			(isSecureChecked) => {
+				const ports = [6667, 6697];
+				const newPort = isSecureChecked ? 0 : 1;
+
+				// If you disable TLS and current port is 6697,
+				// set it to 6667, and vice versa
+				if (props.defaults?.port === ports[newPort]) {
+					props.defaults.port = ports[1 - newPort];
+				}
+			}
+		);
+
+		const setSaslAuth = (type: string) => {
+			if (props.defaults) {
+				props.defaults.sasl = type;
+			}
+		};
+
+		const usernameInput = ref<HTMLInputElement | null>(null);
+
+		const onNickChanged = (event: Event) => {
+			if (!usernameInput.value) {
+				return;
+			}
+
+			const usernameRef = usernameInput.value;
+
+			if (!usernameRef.value || usernameRef.value === previousUsername.value) {
+				usernameRef.value = (event.target as HTMLInputElement)?.value;
+			}
+
+			previousUsername.value = (event.target as HTMLInputElement)?.value;
+		};
+
+		const onSubmit = (event: Event) => {
+			const formData = new FormData(event.target as HTMLFormElement);
+			const data: Partial<ClientNetwork> = {};
+
+			formData.forEach((value, key) => {
+				data[key] = value;
+			});
+
+			props.handleSubmit(data as ClientNetwork);
+		};
+
+		return {
+			store,
+			config,
+			displayPasswordField,
+			publicPassword,
+			commandsInput,
+			resizeCommandsInput,
+			setSaslAuth,
+			usernameInput,
+			onNickChanged,
+			onSubmit,
+		};
 	},
-};
+});
 </script>
