@@ -9,3 +9,4 @@ public/
 packages/
 config.js
 vapid.json
+dist/

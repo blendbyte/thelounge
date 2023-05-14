@@ -4,30 +4,29 @@
 			<SidebarToggle />
 		</div>
 		<form class="container" method="post" action="" @submit.prevent="onSubmit">
-			<h1 class="title">
-				<template v-if="defaults.uuid">
-					<input v-model="defaults.uuid" type="hidden" name="uuid" />
-					Edit {{ defaults.name }}
-				</template>
-				<template v-else>
-					Connect
-					<template v-if="config.lockNetwork && $store.state.serverConfiguration.public">
-						to {{ defaults.name }}
-					</template>
-				</template>
-			</h1>
 			<template v-if="config.znchost.enabled">
-				<h2>Connect to your ZNCHost.com Service</h2>
+				<h1 class="title" style="font-size: 24px; margin-bottom: 20px">
+					Connect to your ZNCHost.com Service
+				</h1>
 				<div class="connect-row">
 					<label for="connect:host">Server</label>
 					<div class="input-wrap">
 						<input
 							id="connect:host"
-							name="host"
-							v-model="defaults.host"
+							v-model.trim="defaults.host"
 							type="hidden"
+							class="input"
+							name="host"
+							aria-label="Server address"
+							maxlength="255"
+							required
 						/>
-						<input type="text" :value="renderHostname" disabled class="input" />
+						<input
+							class="input"
+							:value="renderedHostname"
+							type="text"
+							disabled="disabled"
+						/>
 					</div>
 				</div>
 				<div class="connect-row">
@@ -35,11 +34,10 @@
 					<input
 						id="connect:username"
 						ref="usernameInput"
-						v-model="defaults.username"
+						v-model.trim="defaults.username"
 						class="input username"
 						name="username"
 						maxlength="100"
-						required
 					/>
 				</div>
 				<div class="connect-row">
@@ -53,22 +51,38 @@
 							v-model="defaults.password"
 							class="input"
 							:type="slotProps.isVisible ? 'text' : 'password'"
-							placeholder=""
 							name="password"
 							maxlength="300"
-							required
 						/>
 					</RevealPassword>
 				</div>
+				<div v-if="zncResultObj.errorMessage" style="margin: 1rem 0; color: red">
+					{{ zncResultObj.errorMessage }}
+				</div>
 			</template>
+
 			<template v-else>
-				<template v-if="!config.lockNetwork">
+				<h1 class="title">
+					<template v-if="defaults.uuid">
+						<input v-model="defaults.uuid" type="hidden" name="uuid" />
+						Edit {{ defaults.name }}
+					</template>
+					<template v-else>
+						Connect
+						<template
+							v-if="config?.lockNetwork && store?.state.serverConfiguration?.public"
+						>
+							to {{ defaults.name }}
+						</template>
+					</template>
+				</h1>
+				<template v-if="!config?.lockNetwork">
 					<h2>Network settings</h2>
 					<div class="connect-row">
 						<label for="connect:name">Name</label>
 						<input
 							id="connect:name"
-							v-model="defaults.name"
+							v-model.trim="defaults.name"
 							class="input"
 							name="name"
 							maxlength="100"
@@ -79,7 +93,7 @@
 						<div class="input-wrap">
 							<input
 								id="connect:host"
-								v-model="defaults.host"
+								v-model.trim="defaults.host"
 								class="input"
 								name="host"
 								aria-label="Server address"
@@ -166,7 +180,7 @@
 							<div class="input-wrap">
 								<input
 									id="connect:proxyHost"
-									v-model="defaults.proxyHost"
+									v-model.trim="defaults.proxyHost"
 									class="input"
 									name="proxyHost"
 									aria-label="Proxy host"
@@ -191,7 +205,7 @@
 							<input
 								id="connect:proxyUsername"
 								ref="proxyUsernameInput"
-								v-model="defaults.proxyUsername"
+								v-model.trim="defaults.proxyUsername"
 								class="input username"
 								name="proxyUsername"
 								maxlength="100"
@@ -212,7 +226,7 @@
 									class="input"
 									:type="slotProps.isVisible ? 'text' : 'password'"
 									placeholder="Proxy password"
-									name="password"
+									name="proxyPassword"
 									maxlength="300"
 								/>
 							</RevealPassword>
@@ -220,14 +234,14 @@
 					</template>
 				</template>
 				<template
-					v-else-if="config.lockNetwork && !$store.state.serverConfiguration.public"
+					v-else-if="config.lockNetwork && !store.state.serverConfiguration?.public"
 				>
 					<h2>Network settings</h2>
 					<div class="connect-row">
 						<label for="connect:name">Name</label>
 						<input
 							id="connect:name"
-							v-model="defaults.name"
+							v-model.trim="defaults.name"
 							class="input"
 							name="name"
 							maxlength="100"
@@ -266,13 +280,13 @@
 						@input="onNickChanged"
 					/>
 				</div>
-				<template v-if="!config.useHexIp">
+				<template v-if="!config?.useHexIp">
 					<div class="connect-row">
 						<label for="connect:username">Username</label>
 						<input
 							id="connect:username"
 							ref="usernameInput"
-							v-model="defaults.username"
+							v-model.trim="defaults.username"
 							class="input username"
 							name="username"
 							maxlength="100"
@@ -283,7 +297,7 @@
 					<label for="connect:realname">Real name</label>
 					<input
 						id="connect:realname"
-						v-model="defaults.realname"
+						v-model.trim="defaults.realname"
 						class="input"
 						name="realname"
 						maxlength="300"
@@ -293,14 +307,14 @@
 					<label for="connect:leaveMessage">Leave message</label>
 					<input
 						id="connect:leaveMessage"
-						v-model="defaults.leaveMessage"
+						v-model.trim="defaults.leaveMessage"
 						autocomplete="off"
 						class="input"
 						name="leaveMessage"
 						placeholder="The Lounge - https://thelounge.chat"
 					/>
 				</div>
-				<template v-if="defaults.uuid && !$store.state.serverConfiguration.public">
+				<template v-if="defaults.uuid && !store.state.serverConfiguration?.public">
 					<div class="connect-row">
 						<label for="connect:commands">
 							Commands
@@ -329,15 +343,15 @@ the server tab on new connection"
 						<label for="connect:channels">Channels</label>
 						<input
 							id="connect:channels"
-							v-model="defaults.join"
+							v-model.trim="defaults.join"
 							class="input"
 							name="join"
 						/>
 					</div>
 				</template>
 
-				<template v-if="$store.state.serverConfiguration.public">
-					<template v-if="config.lockNetwork">
+				<template v-if="store.state.serverConfiguration?.public">
+					<template v-if="config?.lockNetwork">
 						<div class="connect-row">
 							<label></label>
 							<div class="input-wrap">
@@ -391,7 +405,7 @@ the server tab on new connection"
 							Username + password (SASL PLAIN)
 						</label>
 						<label
-							v-if="!$store.state.serverConfiguration.public && defaults.tls"
+							v-if="!store.state.serverConfiguration?.public && defaults.tls"
 							class="opt"
 						>
 							<input
@@ -410,7 +424,7 @@ the server tab on new connection"
 							<label for="connect:username">Account</label>
 							<input
 								id="connect:saslAccount"
-								v-model="defaults.saslAccount"
+								v-model.trim="defaults.saslAccount"
 								class="input"
 								name="saslAccount"
 								maxlength="100"
@@ -447,10 +461,6 @@ the server tab on new connection"
 					</div>
 				</template>
 			</template>
-
-			<div v-if="errorMessage" style="margin: 1rem 0; color: red">
-				{{ errorMessage }}
-			</div>
 
 			<div>
 				<button type="submit" class="btn" :disabled="disabled ? true : false">
@@ -490,92 +500,141 @@ the server tab on new connection"
 }
 </style>
 
-<script>
+<script lang="ts">
 import RevealPassword from "./RevealPassword.vue";
 import SidebarToggle from "./SidebarToggle.vue";
+import {defineComponent, nextTick, PropType, ref, watch} from "vue";
+import {useStore} from "../js/store";
+import {ClientNetwork} from "../js/types";
 
-export default {
+export type NetworkFormDefaults = Partial<ClientNetwork> & {
+	join?: string;
+};
+
+export default defineComponent({
 	name: "NetworkForm",
 	components: {
 		RevealPassword,
 		SidebarToggle,
 	},
 	props: {
-		handleSubmit: Function,
-		defaults: Object,
+		handleSubmit: {
+			type: Function as PropType<(network: ClientNetwork) => void>,
+			required: true,
+		},
+		defaults: {
+			type: Object as PropType<NetworkFormDefaults>,
+			required: true,
+		},
 		disabled: Boolean,
-		errorMessage: String,
+		zncResult: Object,
+		renderHostname: String,
 	},
-	data() {
-		return {
-			config: this.$store.state.serverConfiguration,
-			previousUsername: this.defaults.username,
-			renderHostname:
-				this.defaults.host + "." + this.$store.state.serverConfiguration.znchost.suffix,
-			displayPasswordField: false,
-		};
-	},
-	watch: {
-		displayPasswordField(value) {
-			if (value) {
-				this.$nextTick(() => this.$refs.publicPassword.focus());
-			}
-		},
-		"defaults.commands"() {
-			this.$nextTick(this.resizeCommandsInput);
-		},
-		"defaults.tls"(isSecureChecked) {
-			const ports = [6667, 6697];
-			const newPort = isSecureChecked ? 0 : 1;
+	setup(props) {
+		const store = useStore();
+		const config = ref(store.state.serverConfiguration);
+		const previousUsername = ref(props.defaults?.username);
+		const displayPasswordField = ref(false);
+		const renderedHostname =
+			props.defaults.host + "." + store.state.serverConfiguration?.znchost.suffix;
 
-			// If you disable TLS and current port is 6697,
-			// set it to 6667, and vice versa
-			if (this.defaults.port === ports[newPort]) {
-				this.defaults.port = ports[1 - newPort];
-			}
-		},
-	},
-	methods: {
-		setSaslAuth(type) {
-			this.defaults.sasl = type;
-		},
-		onNickChanged(event) {
-			// Username input is not available when useHexIp is set
-			if (!this.$refs.usernameInput) {
-				return;
-			}
+		const publicPassword = ref<HTMLInputElement | null>(null);
+		const zncResultObj = ref(props.zncResult);
 
-			if (
-				!this.$refs.usernameInput.value ||
-				this.$refs.usernameInput.value === this.previousUsername
-			) {
-				this.$refs.usernameInput.value = event.target.value;
+		watch(displayPasswordField, (newValue) => {
+			if (newValue) {
+				void nextTick(() => {
+					publicPassword.value?.focus();
+				});
 			}
+		});
 
-			this.previousUsername = event.target.value;
-		},
-		onSubmit(event) {
-			const formData = new FormData(event.target);
-			const data = {};
+		const commandsInput = ref<HTMLInputElement | null>(null);
 
-			for (const item of formData.entries()) {
-				data[item[0]] = item[1];
-			}
-
-			this.handleSubmit(data);
-		},
-		resizeCommandsInput() {
-			if (!this.$refs.commandsInput) {
+		const resizeCommandsInput = () => {
+			if (!commandsInput.value) {
 				return;
 			}
 
 			// Reset height first so it can down size
-			this.$refs.commandsInput.style.height = "";
+			commandsInput.value.style.height = "";
 
 			// 2 pixels to account for the border
-			this.$refs.commandsInput.style.height =
-				Math.ceil(this.$refs.commandsInput.scrollHeight + 2) + "px";
-		},
+			commandsInput.value.style.height = `${Math.ceil(
+				commandsInput.value.scrollHeight + 2
+			)}px`;
+		};
+
+		watch(
+			() => props.defaults?.commands,
+			() => {
+				void nextTick(() => {
+					resizeCommandsInput();
+				});
+			}
+		);
+
+		watch(
+			() => props.defaults?.tls,
+			(isSecureChecked) => {
+				const ports = [6667, 6697];
+				const newPort = isSecureChecked ? 0 : 1;
+
+				// If you disable TLS and current port is 6697,
+				// set it to 6667, and vice versa
+				if (props.defaults?.port === ports[newPort]) {
+					props.defaults.port = ports[1 - newPort];
+				}
+			}
+		);
+
+		const setSaslAuth = (type: string) => {
+			if (props.defaults) {
+				props.defaults.sasl = type;
+			}
+		};
+
+		const usernameInput = ref<HTMLInputElement | null>(null);
+
+		const onNickChanged = (event: Event) => {
+			if (!usernameInput.value) {
+				return;
+			}
+
+			const usernameRef = usernameInput.value;
+
+			if (!usernameRef.value || usernameRef.value === previousUsername.value) {
+				usernameRef.value = (event.target as HTMLInputElement)?.value;
+			}
+
+			previousUsername.value = (event.target as HTMLInputElement)?.value;
+		};
+
+		const onSubmit = (event: Event) => {
+			const formData = new FormData(event.target as HTMLFormElement);
+			const data: Partial<ClientNetwork> = {};
+
+			formData.forEach((value, key) => {
+				data[key] = value;
+			});
+
+			props.handleSubmit(data as ClientNetwork);
+		};
+
+		return {
+			store,
+			config,
+			displayPasswordField,
+			publicPassword,
+			commandsInput,
+			resizeCommandsInput,
+			setSaslAuth,
+			usernameInput,
+			onNickChanged,
+			onSubmit,
+			renderedHostname,
+			zncResultObj,
+		};
 	},
-};
+});
 </script>

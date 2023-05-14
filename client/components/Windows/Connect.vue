@@ -1,17 +1,22 @@
 <template>
 	<NetworkForm
 		:handle-submit="handleSubmit"
-		:error-message="errorMessage"
 		:defaults="defaults"
 		:disabled="disabled"
+		:znc-result="zncResult"
 	/>
 </template>
 
-<script>
-import socket from "../../js/socket";
-import NetworkForm from "../NetworkForm.vue";
+<script lang="ts">
+import {defineComponent, ref} from "vue";
 
-export default {
+import socket from "../../js/socket";
+import {useStore} from "../../js/store";
+import NetworkForm, {NetworkFormDefaults} from "../NetworkForm.vue";
+
+type zncResultType = {errorMessage: string; retriedNetworks: boolean};
+
+export default defineComponent({
 	name: "Connect",
 	components: {
 		NetworkForm,
@@ -19,57 +24,52 @@ export default {
 	props: {
 		queryParams: Object,
 	},
-	data() {
-		// Merge settings from url params into default settings
-		const defaults = Object.assign(
-			{},
-			this.$store.state.serverConfiguration.defaults,
-			this.parseOverrideParams(this.queryParams)
-		);
-		return {
-			config: this.$store.state.serverConfiguration,
-			disabled: false,
-			errorMessage: "",
-			retriedNetworks: false,
-			defaults,
-		};
-	},
-	methods: {
-		handleSubmit(data) {
-			if (this.config.znchost.enabled) {
-				const that = this;
-				this.disabled = true;
-				this.errorMessage = "";
+	setup(props) {
+		const store = useStore();
+
+		const disabled = ref(false);
+
+		const zncResult: zncResultType = {errorMessage: "", retriedNetworks: false};
+
+		const handleSubmit = (data: Record<string, any>) => {
+			disabled.value = true;
+
+			if (store.state.serverConfiguration?.znchost.enabled) {
+				disabled.value = true;
+				zncResult.errorMessage = "";
 
 				const sendFunc = () => {
 					// Get all networks
 					socket.emit("znc:getnetworks", data, function (ret) {
 						if (ret.okay === false) {
-							that.disabled = false;
-							that.errorMessage = ret.error;
+							disabled.value = false;
+							zncResult.errorMessage = ret.error;
 							return;
 						}
 
 						if (ret.networks.length === 0) {
-							if (!that.retriedNetworks) {
-								that.retriedNetworks = true;
+							if (!zncResult.retriedNetworks) {
+								zncResult.retriedNetworks = true;
 								sendFunc();
 								return;
 							}
 
-							that.errorMessage =
+							zncResult.errorMessage =
 								"Login successful, but you do not have any IRC networks configured yet. Please ask your administrator.";
-							that.retriedNetworks = false;
-							that.disabled = false;
+							zncResult.retriedNetworks = false;
+							disabled.value = false;
 							return;
 						}
 
 						ret.networks.forEach((net) => {
 							socket.emit("network:new", {
 								name: net,
-								host: data.host + "." + that.config.znchost.suffix,
-								port: that.config.znchost.port,
-								tls: that.config.znchost.tls,
+								host:
+									data.host +
+									"." +
+									store.state.serverConfiguration?.znchost.suffix,
+								port: store.state.serverConfiguration?.znchost.port,
+								tls: store.state.serverConfiguration?.znchost.tls,
 								rejectUnauthorized: true,
 								username: data.username + "/" + net,
 								password: data.password,
@@ -85,27 +85,104 @@ export default {
 			}
 
 			socket.emit("network:new", data);
-		},
-		parseOverrideParams(params) {
-			const parsedParams = {};
+		};
+
+		const parseOverrideParams = (params?: Record<string, string>) => {
+			if (!params) {
+				return {};
+			}
 
 			// Get hostname from URL
 			const hostname = window.location.hostname;
 			const matches = hostname.match(
-				new RegExp("^(.*)." + this.$store.state.serverConfiguration.znchost.suffix + "$")
+				new RegExp("^(.*)." + store.state.serverConfiguration?.znchost.suffix + "$")
 			);
 
 			if (matches !== null) {
-				parsedParams.host = matches[1];
+				params.host = matches[1];
 			}
 
-			// Username via param
-			if (typeof params.username !== "undefined") {
-				parsedParams.username = String(params.username);
+			const parsedParams: Record<string, any> = {};
+
+			for (let key of Object.keys(params)) {
+				let value = params[key];
+
+				// Param can contain multiple values in an array if its supplied more than once
+				if (Array.isArray(value)) {
+					value = value[0];
+				}
+
+				// Support `channels` as a compatibility alias with other clients
+				if (key === "channels") {
+					key = "join";
+				}
+
+				if (
+					!Object.prototype.hasOwnProperty.call(
+						store.state.serverConfiguration?.defaults,
+						key
+					)
+				) {
+					continue;
+				}
+
+				// When the network is locked, URL overrides should not affect disabled fields
+				if (
+					store.state.serverConfiguration?.lockNetwork &&
+					["name", "host", "port", "tls", "rejectUnauthorized"].includes(key)
+				) {
+					continue;
+				}
+
+				if (key === "join") {
+					value = value
+						.split(",")
+						.map((chan) => {
+							if (!chan.match(/^[#&!+]/)) {
+								return `#${chan}`;
+							}
+
+							return chan;
+						})
+						.join(", ");
+				}
+
+				// Override server provided defaults with parameters passed in the URL if they match the data type
+				switch (typeof store.state.serverConfiguration?.defaults[key]) {
+					case "boolean":
+						if (value === "0" || value === "false") {
+							parsedParams[key] = false;
+						} else {
+							parsedParams[key] = !!value;
+						}
+
+						break;
+					case "number":
+						parsedParams[key] = Number(value);
+						break;
+					case "string":
+						parsedParams[key] = String(value);
+						break;
+				}
 			}
 
 			return parsedParams;
-		},
+		};
+
+		const defaults = ref<Partial<NetworkFormDefaults>>(
+			Object.assign(
+				{},
+				store.state.serverConfiguration?.defaults,
+				parseOverrideParams(props.queryParams)
+			)
+		);
+
+		return {
+			defaults,
+			disabled,
+			handleSubmit,
+			zncResult,
+		};
 	},
-};
+});
 </script>
