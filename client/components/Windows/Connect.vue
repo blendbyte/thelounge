@@ -61,20 +61,21 @@ export default defineComponent({
 							return;
 						}
 
-						console.log("znc ok?");
-
-						// ret.networks.forEach((net) => {
-						// 	socket.emit("network:new", {
-						// 		name: net,
-						// 		host: data.host + "." + that.config.znchost.suffix,
-						// 		port: that.config.znchost.port,
-						// 		tls: that.config.znchost.tls,
-						// 		rejectUnauthorized: true,
-						// 		username: data.username + "/" + net,
-						// 		password: data.password,
-						// 		nickname: data.username,
-						// 	});
-						// });
+						ret.networks.forEach((net) => {
+							socket.emit("network:new", {
+								name: net,
+								host:
+									data.host +
+									"." +
+									store.state.serverConfiguration?.znchost.suffix,
+								port: store.state.serverConfiguration?.znchost.port,
+								tls: store.state.serverConfiguration?.znchost.tls,
+								rejectUnauthorized: true,
+								username: data.username + "/" + net,
+								password: data.password,
+								nickname: data.username,
+							});
+						});
 					});
 				};
 
