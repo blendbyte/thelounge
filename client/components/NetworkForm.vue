@@ -56,8 +56,8 @@
 						/>
 					</RevealPassword>
 				</div>
-				<div v-if="errorMessage" style="margin: 1rem 0; color: red">
-					{{ errorMessage }}
+				<div v-if="zncResultObj.errorMessage" style="margin: 1rem 0; color: red">
+					{{ zncResultObj.errorMessage }}
 				</div>
 			</template>
 
@@ -527,7 +527,7 @@ export default defineComponent({
 			required: true,
 		},
 		disabled: Boolean,
-		errorMessage: String,
+		zncResult: Object,
 		renderHostname: String,
 	},
 	setup(props) {
@@ -537,9 +537,9 @@ export default defineComponent({
 		const displayPasswordField = ref(false);
 		const renderedHostname =
 			props.defaults.host + "." + store.state.serverConfiguration?.znchost.suffix;
-		// data.renderHostname = "asd"; //props.defaults.host + "." + store.state.serverConfiguration.znchost.suffix;
 
 		const publicPassword = ref<HTMLInputElement | null>(null);
+		const zncResultObj = ref(props.zncResult);
 
 		watch(displayPasswordField, (newValue) => {
 			if (newValue) {
@@ -633,6 +633,7 @@ export default defineComponent({
 			onNickChanged,
 			onSubmit,
 			renderedHostname,
+			zncResultObj,
 		};
 	},
 });

@@ -1,9 +1,9 @@
 <template>
 	<NetworkForm
 		:handle-submit="handleSubmit"
-		:error-message="errorMessage"
 		:defaults="defaults"
 		:disabled="disabled"
+		:znc-result="zncResult"
 	/>
 </template>
 
@@ -13,6 +13,8 @@ import {defineComponent, ref} from "vue";
 import socket from "../../js/socket";
 import {useStore} from "../../js/store";
 import NetworkForm, {NetworkFormDefaults} from "../NetworkForm.vue";
+
+type zncResultType = {errorMessage: string; retriedNetworks: boolean};
 
 export default defineComponent({
 	name: "Connect",
@@ -27,49 +29,52 @@ export default defineComponent({
 
 		const disabled = ref(false);
 
+		const zncResult: zncResultType = {errorMessage: "", retriedNetworks: false};
+
 		const handleSubmit = (data: Record<string, any>) => {
 			disabled.value = true;
 
-			if (this.config.znchost.enabled) {
-				const that = this;
-				this.disabled = true;
-				this.errorMessage = "";
+			if (store.state.serverConfiguration?.znchost.enabled) {
+				disabled.value = true;
+				zncResult.errorMessage = "";
 
 				const sendFunc = () => {
 					// Get all networks
 					socket.emit("znc:getnetworks", data, function (ret) {
 						if (ret.okay === false) {
-							that.disabled = false;
-							that.errorMessage = ret.error;
+							disabled.value = false;
+							zncResult.errorMessage = ret.error;
 							return;
 						}
 
 						if (ret.networks.length === 0) {
-							if (!that.retriedNetworks) {
-								that.retriedNetworks = true;
+							if (!zncResult.retriedNetworks) {
+								zncResult.retriedNetworks = true;
 								sendFunc();
 								return;
 							}
 
-							that.errorMessage =
+							zncResult.errorMessage =
 								"Login successful, but you do not have any IRC networks configured yet. Please ask your administrator.";
-							that.retriedNetworks = false;
-							that.disabled = false;
+							zncResult.retriedNetworks = false;
+							disabled.value = false;
 							return;
 						}
 
-						ret.networks.forEach((net) => {
-							socket.emit("network:new", {
-								name: net,
-								host: data.host + "." + that.config.znchost.suffix,
-								port: that.config.znchost.port,
-								tls: that.config.znchost.tls,
-								rejectUnauthorized: true,
-								username: data.username + "/" + net,
-								password: data.password,
-								nickname: data.username,
-							});
-						});
+						console.log("znc ok?");
+
+						// ret.networks.forEach((net) => {
+						// 	socket.emit("network:new", {
+						// 		name: net,
+						// 		host: data.host + "." + that.config.znchost.suffix,
+						// 		port: that.config.znchost.port,
+						// 		tls: that.config.znchost.tls,
+						// 		rejectUnauthorized: true,
+						// 		username: data.username + "/" + net,
+						// 		password: data.password,
+						// 		nickname: data.username,
+						// 	});
+						// });
 					});
 				};
 
@@ -86,6 +91,16 @@ export default defineComponent({
 				return {};
 			}
 
+			// Get hostname from URL
+			const hostname = window.location.hostname;
+			const matches = hostname.match(
+				new RegExp("^(.*)." + store.state.serverConfiguration?.znchost.suffix + "$")
+			);
+
+			if (matches !== null) {
+				params.host = matches[1];
+			}
+
 			const parsedParams: Record<string, any> = {};
 
 			for (let key of Object.keys(params)) {
@@ -94,15 +109,6 @@ export default defineComponent({
 				// Param can contain multiple values in an array if its supplied more than once
 				if (Array.isArray(value)) {
 					value = value[0];
-				}
-
-				// Get hostname from URL
-				const hostname = window.location.hostname;
-				const matches = hostname.match(
-					new RegExp("^(.*)." + store.state.serverConfiguration?.znchost.suffix + "$")
-				);
-				if (matches !== null) {
-					parsedParams.host = matches[1];
 				}
 
 				// Support `channels` as a compatibility alias with other clients
@@ -174,6 +180,7 @@ export default defineComponent({
 			defaults,
 			disabled,
 			handleSubmit,
+			zncResult,
 		};
 	},
 });
