@@ -4,35 +4,29 @@
 			<SidebarToggle />
 		</div>
 		<form class="container" method="post" action="" @submit.prevent="onSubmit">
-			<h1 class="title">
-				<template v-if="defaults.uuid">
-					<input v-model="defaults.uuid" type="hidden" name="uuid" />
-					Edit {{ defaults.name }}
-				</template>
-				<template v-else>
-					Connect
-					<template
-						v-if="config?.lockNetwork && store?.state.serverConfiguration?.public"
-					>
-						to {{ defaults.name }}
-					</template>
-				</template>
-			</h1>
 			<template v-if="config.znchost.enabled">
-				<h2>Connect to your ZNCHost.com Service</h2>
+				<h1 class="title" style="font-size: 24px; margin-bottom: 20px">
+					Connect to your ZNCHost.com Service
+				</h1>
 				<div class="connect-row">
 					<label for="connect:host">Server</label>
-					<div class="input-wrap" style="display: flex">
+					<div class="input-wrap">
 						<input
 							id="connect:host"
 							v-model.trim="defaults.host"
+							type="hidden"
 							class="input"
 							name="host"
 							aria-label="Server address"
 							maxlength="255"
 							required
 						/>
-						<div style="align-self: center">.{{ config.znchost.suffix }}</div>
+						<input
+							class="input"
+							:value="renderedHostname"
+							type="text"
+							disabled="disabled"
+						/>
 					</div>
 				</div>
 				<div class="connect-row">
@@ -44,7 +38,6 @@
 						class="input username"
 						name="username"
 						maxlength="100"
-						required
 					/>
 				</div>
 				<div class="connect-row">
@@ -58,22 +51,38 @@
 							v-model="defaults.password"
 							class="input"
 							:type="slotProps.isVisible ? 'text' : 'password'"
-							placeholder=""
 							name="password"
 							maxlength="300"
-							required
 						/>
 					</RevealPassword>
 				</div>
+				<div v-if="errorMessage" style="margin: 1rem 0; color: red">
+					{{ errorMessage }}
+				</div>
 			</template>
+
 			<template v-else>
-				<template v-if="!config.lockNetwork">
+				<h1 class="title">
+					<template v-if="defaults.uuid">
+						<input v-model="defaults.uuid" type="hidden" name="uuid" />
+						Edit {{ defaults.name }}
+					</template>
+					<template v-else>
+						Connect
+						<template
+							v-if="config?.lockNetwork && store?.state.serverConfiguration?.public"
+						>
+							to {{ defaults.name }}
+						</template>
+					</template>
+				</h1>
+				<template v-if="!config?.lockNetwork">
 					<h2>Network settings</h2>
 					<div class="connect-row">
 						<label for="connect:name">Name</label>
 						<input
 							id="connect:name"
-							v-model="defaults.name"
+							v-model.trim="defaults.name"
 							class="input"
 							name="name"
 							maxlength="100"
@@ -84,7 +93,7 @@
 						<div class="input-wrap">
 							<input
 								id="connect:host"
-								v-model="defaults.host"
+								v-model.trim="defaults.host"
 								class="input"
 								name="host"
 								aria-label="Server address"
@@ -171,7 +180,7 @@
 							<div class="input-wrap">
 								<input
 									id="connect:proxyHost"
-									v-model="defaults.proxyHost"
+									v-model.trim="defaults.proxyHost"
 									class="input"
 									name="proxyHost"
 									aria-label="Proxy host"
@@ -196,7 +205,7 @@
 							<input
 								id="connect:proxyUsername"
 								ref="proxyUsernameInput"
-								v-model="defaults.proxyUsername"
+								v-model.trim="defaults.proxyUsername"
 								class="input username"
 								name="proxyUsername"
 								maxlength="100"
@@ -217,7 +226,7 @@
 									class="input"
 									:type="slotProps.isVisible ? 'text' : 'password'"
 									placeholder="Proxy password"
-									name="password"
+									name="proxyPassword"
 									maxlength="300"
 								/>
 							</RevealPassword>
@@ -225,14 +234,14 @@
 					</template>
 				</template>
 				<template
-					v-else-if="config.lockNetwork && !$store.state.serverConfiguration.public"
+					v-else-if="config.lockNetwork && !store.state.serverConfiguration?.public"
 				>
 					<h2>Network settings</h2>
 					<div class="connect-row">
 						<label for="connect:name">Name</label>
 						<input
 							id="connect:name"
-							v-model="defaults.name"
+							v-model.trim="defaults.name"
 							class="input"
 							name="name"
 							maxlength="100"
@@ -271,13 +280,13 @@
 						@input="onNickChanged"
 					/>
 				</div>
-				<template v-if="!config.useHexIp">
+				<template v-if="!config?.useHexIp">
 					<div class="connect-row">
 						<label for="connect:username">Username</label>
 						<input
 							id="connect:username"
 							ref="usernameInput"
-							v-model="defaults.username"
+							v-model.trim="defaults.username"
 							class="input username"
 							name="username"
 							maxlength="100"
@@ -288,7 +297,7 @@
 					<label for="connect:realname">Real name</label>
 					<input
 						id="connect:realname"
-						v-model="defaults.realname"
+						v-model.trim="defaults.realname"
 						class="input"
 						name="realname"
 						maxlength="300"
@@ -298,22 +307,22 @@
 					<label for="connect:leaveMessage">Leave message</label>
 					<input
 						id="connect:leaveMessage"
-						v-model="defaults.leaveMessage"
+						v-model.trim="defaults.leaveMessage"
 						autocomplete="off"
 						class="input"
 						name="leaveMessage"
 						placeholder="The Lounge - https://thelounge.chat"
 					/>
 				</div>
-				<template v-if="defaults.uuid && !$store.state.serverConfiguration.public">
+				<template v-if="defaults.uuid && !store.state.serverConfiguration?.public">
 					<div class="connect-row">
 						<label for="connect:commands">
 							Commands
 							<span
 								class="tooltipped tooltipped-ne tooltipped-no-delay"
 								aria-label="One /command per line.
-Each command will be executed in
-the server tab on new connection"
+	Each command will be executed in
+	the server tab on new connection"
 							>
 								<button class="extra-help" />
 							</span>
@@ -334,15 +343,15 @@ the server tab on new connection"
 						<label for="connect:channels">Channels</label>
 						<input
 							id="connect:channels"
-							v-model="defaults.join"
+							v-model.trim="defaults.join"
 							class="input"
 							name="join"
 						/>
 					</div>
 				</template>
 
-				<template v-if="$store.state.serverConfiguration.public">
-					<template v-if="config.lockNetwork">
+				<template v-if="store.state.serverConfiguration?.public">
+					<template v-if="config?.lockNetwork">
 						<div class="connect-row">
 							<label></label>
 							<div class="input-wrap">
@@ -396,7 +405,7 @@ the server tab on new connection"
 							Username + password (SASL PLAIN)
 						</label>
 						<label
-							v-if="!$store.state.serverConfiguration.public && defaults.tls"
+							v-if="!store.state.serverConfiguration?.public && defaults.tls"
 							class="opt"
 						>
 							<input
@@ -415,7 +424,7 @@ the server tab on new connection"
 							<label for="connect:username">Account</label>
 							<input
 								id="connect:saslAccount"
-								v-model="defaults.saslAccount"
+								v-model.trim="defaults.saslAccount"
 								class="input"
 								name="saslAccount"
 								maxlength="100"
@@ -452,10 +461,6 @@ the server tab on new connection"
 					</div>
 				</template>
 			</template>
-
-			<div v-if="errorMessage" style="margin: 1rem 0; color: red">
-				{{ errorMessage }}
-			</div>
 
 			<div>
 				<button type="submit" class="btn" :disabled="disabled ? true : false">
@@ -523,13 +528,17 @@ export default defineComponent({
 		},
 		disabled: Boolean,
 		errorMessage: String,
+		renderHostname: String,
 	},
-
 	setup(props) {
 		const store = useStore();
 		const config = ref(store.state.serverConfiguration);
 		const previousUsername = ref(props.defaults?.username);
 		const displayPasswordField = ref(false);
+		const renderedHostname =
+			props.defaults.host + "." + store.state.serverConfiguration?.znchost.suffix;
+		// data.renderHostname = "asd"; //props.defaults.host + "." + store.state.serverConfiguration.znchost.suffix;
+
 		const publicPassword = ref<HTMLInputElement | null>(null);
 
 		watch(displayPasswordField, (newValue) => {
@@ -623,6 +632,7 @@ export default defineComponent({
 			usernameInput,
 			onNickChanged,
 			onSubmit,
+			renderedHostname,
 		};
 	},
 });
