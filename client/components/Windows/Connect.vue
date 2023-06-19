@@ -92,17 +92,17 @@ export default defineComponent({
 				return {};
 			}
 
+			const parsedParams: Record<string, any> = {};
+
 			// Get hostname from URL
 			const hostname = window.location.hostname;
 			const matches = hostname.match(
-				new RegExp("^(.*)." + store.state.serverConfiguration?.znchost.suffix + "$")
+				new RegExp("^(.*)\." + store.state.serverConfiguration?.znchost.suffix + "$")
 			);
 
 			if (matches !== null) {
-				params.host = matches[1];
+				parsedParams.host = matches[1];
 			}
-
-			const parsedParams: Record<string, any> = {};
 
 			for (let key of Object.keys(params)) {
 				let value = params[key];
