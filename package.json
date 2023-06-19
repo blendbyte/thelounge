@@ -1,7 +1,7 @@
 {
   "name": "thelounge",
   "description": "The self-hosted Web IRC client",
-  "version": "4.4.0-znchost",
+  "version": "4.4.1-znchost",
   "preferGlobal": true,
   "bin": {
     "thelounge": "index.js"
@@ -40,7 +40,7 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.0.0"
   },
   "files": [
     "./.thelounge_home",
