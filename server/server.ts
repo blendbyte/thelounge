@@ -506,7 +506,7 @@ function initializeClient(
 					return;
 				}
 
-				let match = event.message.match(/^\|(.*)\|(.*)\|(.*)\|(.*)\|(.*)\|$/);
+				let match = event.message.match(/^\| (.*) \| (.*) \| (.*) \| (.*) \| (.*)\|$/);
 				log.debug('znchost:message', event.type, event.nick, event.message, match === null ? 'nope' : JSON.stringify(match));
 
 				if (match === null) {
