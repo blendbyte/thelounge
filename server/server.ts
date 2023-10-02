@@ -507,6 +507,7 @@ function initializeClient(
 				}
 
 				let match = event.message.match(/^\|(.*)\|(.*)\|(.*)\|(.*)\|(.*)\|$/);
+				log.debug('znchost:message', event.type, event.nick, event.message, match === null ? 'nope' : JSON.stringify(match));
 
 				if (match === null) {
 					return;
@@ -523,10 +524,12 @@ function initializeClient(
 				netdata.networks.push(match[1]);
 			});
 			irc.on("registered", function () {
+				log.debug('znchost:registered', 'listnetworks sent');
 				irc.say("*status", "listnetworks");
 				irc.quit();
 			});
 			irc.on("close", function (event) {
+				log.debug('znchost:closed', String(netdata.networks.length), JSON.stringify(netdata.networks));
 				if (event === true || netdata.networks.length > 0) {
 					netdata.okay = true;
 					cb(netdata);
