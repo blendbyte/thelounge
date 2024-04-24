@@ -82,6 +82,12 @@ type StoragePolicy = {
 	deletionPolicy: "statusOnly" | "everything";
 };
 
+type ZNCHost = {
+	port: number;
+	tls: boolean;
+	suffix: string;
+};
+
 export type ConfigType = {
 	znchost: ZNCHost;
 	public: boolean;
