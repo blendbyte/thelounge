@@ -83,6 +83,7 @@ type StoragePolicy = {
 };
 
 type ZNCHost = {
+	enabled: boolean;
 	port: number;
 	tls: boolean;
 	suffix: string;
