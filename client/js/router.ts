@@ -34,12 +34,12 @@ const router = createRouter({
 				next();
 			},
 		},
-		// {
-		// 	name: "Connect",
-		// 	path: "/connect",
-		// 	component: Connect,
-		// 	props: (route) => ({queryParams: route.query}),
-		// },
+		{
+			name: "Connect",
+			path: "/connect",
+			component: Connect,
+			props: (route) => ({queryParams: route.query}),
+		},
 		{
 			path: "/settings",
 			component: Settings,

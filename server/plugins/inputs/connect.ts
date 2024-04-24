@@ -31,15 +31,15 @@ const input: PluginInputHandler = function (network, chan, cmd, args) {
 		return;
 	}
 
-	let port = args[1] || "";
-	const tls = port[0] === "+";
+	// let port = args[1] || "";
+	// const tls = port[0] === "+";
 
-	if (tls) {
-		port = port.substring(1);
-	}
+	// if (tls) {
+	// 	port = port.substring(1);
+	// }
 
-	const host = args[0];
-	this.connectToNetwork({host, port, tls});
+	// const host = args[0];
+	// this.connectToNetwork({host, port, tls});
 
 	return true;
 };
