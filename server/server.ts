@@ -526,6 +526,7 @@ function initializeClient(
 			irc.on("registered", function () {
 				log.debug('znchost:registered', 'listnetworks sent');
 				irc.say("*status", "listnetworks");
+
 				irc.quit();
 			});
 			irc.on("close", function (event) {
