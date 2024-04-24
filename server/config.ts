@@ -76,11 +76,10 @@ type Debug = {
 	raw: boolean;
 };
 
-type ZNCHost = {
+type StoragePolicy = {
 	enabled: boolean;
-	port: number;
-	tls: boolean;
-	suffix: string;
+	maxAgeDays: number;
+	deletionPolicy: "statusOnly" | "everything";
 };
 
 export type ConfigType = {
@@ -105,6 +104,7 @@ export type ConfigType = {
 	defaults: Defaults;
 	lockNetwork: boolean;
 	messageStorage: string[];
+	storagePolicy: StoragePolicy;
 	useHexIp: boolean;
 	webirc?: WebIRC;
 	identd: Identd;
