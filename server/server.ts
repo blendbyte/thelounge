@@ -498,14 +498,14 @@ function initializeClient(
 					return;
 				}
 
-				let match = event.message.match(/^\| (.*) \| (.*) \| (.*) \| (.*) \| (.*)\|$/);
-				log.debug('znchost:message', event.type, event.nick, event.message, match === null ? 'nope' : JSON.stringify(match));
+				const rawMatch = event.message.match(/^\| (.*) \| (.*) \| (.*) \| (.*) \| (.*)\|$/);
+				log.debug('znchost:message', event.type, event.nick, event.message, rawMatch === null ? 'nope' : JSON.stringify(rawMatch));
 
-				if (match === null) {
+				if (rawMatch === null) {
 					return;
 				}
 
-				match = match.map(function (n) {
+				const match = rawMatch.map(function (n) {
 					return n.trim();
 				});
 

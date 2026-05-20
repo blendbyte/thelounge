@@ -34,6 +34,7 @@ declare module "irc-framework" {
 		tags: {[key: string]: string};
 		target: string;
 		time?: number;
+		type?: string;
 	}
 	export interface JoinEventArgs {
 		account: boolean;
