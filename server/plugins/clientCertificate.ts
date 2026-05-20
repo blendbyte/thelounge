@@ -31,7 +31,7 @@ function get(uuid: string): ClientCertificateType | null {
 		return {
 			private_key: fs.readFileSync(paths.privateKeyPath, "utf-8"),
 			certificate: fs.readFileSync(paths.certificatePath, "utf-8"),
-		} as ClientCertificateType;
+		};
 	} catch (e: any) {
 		log.error("Unable to get certificate", e);
 	}
@@ -85,7 +85,12 @@ function generate() {
 	const cert = pki.createCertificate();
 
 	cert.publicKey = keys.publicKey;
-	cert.serialNumber = crypto.randomBytes(16).toString("hex").toUpperCase();
+
+	// RFC 5280 4.1.2.2: serial number MUST be a positive integer, up to 20 octets.
+	// Clear the high bit of the leading byte to guarantee positivity.
+	const serialBytes = crypto.randomBytes(20);
+	serialBytes[0] &= 0x7f;
+	cert.serialNumber = serialBytes.toString("hex").toUpperCase();
 
 	// Set notBefore a day earlier just in case the time between
 	// the client and server is not perfectly in sync
@@ -95,7 +100,6 @@ function generate() {
 	// Set notAfter 100 years into the future just in case
 	// the server actually validates this field
 	cert.validity.notAfter = new Date();
-	// eslint-disable-next-line @typescript-eslint/restrict-plus-operands
 	cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 100);
 
 	const attrs = [
@@ -122,10 +126,10 @@ function generate() {
 	// Sign this certificate with a SHA256 signature
 	cert.sign(keys.privateKey, md.sha256.create());
 
-	const pem = {
+	const pem: ClientCertificateType = {
 		private_key: pki.privateKeyToPem(keys.privateKey),
 		certificate: pki.certificateToPem(cert),
-	} as ClientCertificateType;
+	};
 
 	return pem;
 }

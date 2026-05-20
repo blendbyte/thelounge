@@ -16,6 +16,7 @@ import GeneralSettings from "../components/Settings/General.vue";
 import AccountSettings from "../components/Settings/Account.vue";
 import NotificationSettings from "../components/Settings/Notifications.vue";
 import {ClientChan} from "./types";
+import {shouldShowGeneralSettings} from "./helpers/settingsTabs";
 
 const router = createRouter({
 	history: createWebHashHistory(),
@@ -48,6 +49,14 @@ const router = createRouter({
 					name: "General",
 					path: "",
 					component: GeneralSettings,
+					beforeEnter(to, from, next) {
+						if (!shouldShowGeneralSettings()) {
+							next({name: "Appearance"});
+							return;
+						}
+
+						next();
+					},
 				},
 				{
 					name: "Appearance",
@@ -162,7 +171,6 @@ async function navigate(routeName: string, params: any = {}) {
 		// If current route is null, replace the history entry
 		// This prevents invalid entries from lingering in history,
 		// and then the route guard preventing proper navigation
-		// eslint-disable-next-line @typescript-eslint/no-empty-function
 		await router.replace({name: routeName, params}).catch(() => {});
 	}
 }
