@@ -37,7 +37,7 @@
 					</div>
 					<span
 						v-else
-						:title="channel.topic"
+						:title="plainTopic"
 						:class="{topic: true, empty: !channel.topic}"
 						@dblclick="editTopic"
 						><ParsedMessage
@@ -89,7 +89,7 @@
 					</div>
 				</div>
 				<div v-else class="chat-content">
-					<div
+					<button
 						:class="[
 							'scroll-down tooltipped tooltipped-w tooltipped-no-touch',
 							{'scroll-down-shown': !channel.scrolledToBottom},
@@ -98,7 +98,7 @@
 						@click="messageList?.jumpToBottom()"
 					>
 						<div class="scroll-down-arrow" />
-					</div>
+					</button>
 					<ChatUserList v-if="channel.type === 'channel'" :channel="channel" />
 					<MessageList
 						ref="messageList"
@@ -136,6 +136,8 @@ import ListIgnored from "./Special/ListIgnored.vue";
 import {defineComponent, PropType, ref, computed, watch, nextTick, onMounted, Component} from "vue";
 import type {ClientNetwork, ClientChan} from "../js/types";
 import {useStore} from "../js/store";
+import {SpecialChanType, ChanType} from "../../shared/types/chan";
+import parseStyle from "../js/helpers/ircmessageparser/parseStyle";
 
 export default defineComponent({
 	name: "Chat",
@@ -159,15 +161,27 @@ export default defineComponent({
 		const messageList = ref<typeof MessageList>();
 		const topicInput = ref<HTMLInputElement | null>(null);
 
+		const plainTopic = computed(() => {
+			const topic = props.channel.topic;
+
+			if (!topic) {
+				return "";
+			}
+
+			return parseStyle(topic)
+				.map((fragment) => fragment.text)
+				.join("");
+		});
+
 		const specialComponent = computed(() => {
 			switch (props.channel.special) {
-				case "list_bans":
+				case SpecialChanType.BANLIST:
 					return ListBans as Component;
-				case "list_invites":
+				case SpecialChanType.INVITELIST:
 					return ListInvites as Component;
-				case "list_channels":
+				case SpecialChanType.CHANNELLIST:
 					return ListChannels as Component;
-				case "list_ignored":
+				case SpecialChanType.IGNORELIST:
 					return ListIgnored as Component;
 			}
 
@@ -194,7 +208,7 @@ export default defineComponent({
 		};
 
 		const editTopic = () => {
-			if (props.channel.type === "channel") {
+			if (props.channel.type === ChanType.CHANNEL) {
 				props.channel.editTopic = true;
 			}
 		};
@@ -210,7 +224,7 @@ export default defineComponent({
 
 			if (props.channel.topic !== newTopic) {
 				const target = props.channel.id;
-				const text = `/raw TOPIC ${props.channel.name} :${newTopic}`;
+				const text = `/topic ${newTopic}`;
 				socket.emit("input", {target, text});
 			}
 		};
@@ -261,6 +275,7 @@ export default defineComponent({
 			store,
 			messageList,
 			topicInput,
+			plainTopic,
 			specialComponent,
 			hideUserVisibleError,
 			editTopic,

@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import path from "path";
 import {expect} from "chai";
 import util from "../util";
 import Config from "../../server/config";
-import link, {LinkPreview} from "../../server/plugins/irc-events/link";
+import link from "../../server/plugins/irc-events/link";
+import {LinkPreview} from "../../shared/types/msg";
 
 describe("Link plugin", function () {
 	// Increase timeout due to unpredictable I/O on CI services
@@ -25,7 +25,7 @@ Vivamus bibendum vulputate tincidunt. Sed vitae ligula felis.`;
 	beforeEach(function (done) {
 		app = util.createWebserver();
 		app.get("/real-test-image.png", function (req, res) {
-			res.sendFile(path.resolve(__dirname, "../../client/img/logo-grey-bg-120x120px.png"));
+			res.sendFile(path.resolve("client/img/logo-grey-bg-120x120px.png"));
 		});
 		this.connection = app.listen(0, "127.0.0.1", () => {
 			this.port = this.connection.address().port;

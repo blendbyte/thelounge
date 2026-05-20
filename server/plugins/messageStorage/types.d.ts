@@ -1,10 +1,9 @@
-import type {Database} from "sqlite3";
-
 import {Channel} from "../../models/channel";
 import {Message} from "../../models/message";
 import {Network} from "../../models/network";
 import Client from "../../client";
-import type {MessageType} from "../../models/msg";
+import {SearchQuery, SearchResponse} from "../../../shared/types/storage";
+import type {MessageType} from "../../../shared/types/msg";
 
 export type DeletionRequest = {
 	olderThanDays: number;
@@ -15,31 +14,20 @@ export type DeletionRequest = {
 interface MessageStorage {
 	isEnabled: boolean;
 
-	enable(): Promise<void>;
+	enable(): void;
 
-	close(): Promise<void>;
+	close(): void;
 
-	index(network: Network, channel: Channel, msg: Message): Promise<void>;
+	index(network: Network, channel: Channel, msg: Message): void;
 
-	deleteChannel(network: Network, channel: Channel): Promise<void>;
+	deleteChannel(network: Network, channel: Channel): void;
 
-	getMessages(network: Network, channel: Channel, nextID: () => number): Promise<Message[]>;
+	getMessages(network: Network, channel: Channel, nextID: () => number): Message[];
 
 	canProvideMessages(): boolean;
 }
 
-export type SearchQuery = {
-	searchTerm: string;
-	networkUuid: string;
-	channelName: string;
-	offset: number;
-};
-
-export type SearchResponse = SearchQuery & {
-	results: Message[];
-};
-
-type SearchFunction = (query: SearchQuery) => Promise<SearchResponse>;
+type SearchFunction = (query: SearchQuery) => SearchResponse;
 
 export interface SearchableMessageStorage extends MessageStorage {
 	search: SearchFunction;

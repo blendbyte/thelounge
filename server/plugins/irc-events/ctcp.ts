@@ -1,9 +1,9 @@
 import _ from "lodash";
 import {IrcEventHandler} from "../../client";
-import Helper from "../../helper";
-import Msg, {MessageType} from "../../models/msg";
+import Msg from "../../models/msg";
 import User from "../../models/user";
 import pkg from "../../../package.json";
+import {MessageType} from "../../../shared/types/msg";
 
 const ctcpResponses = {
 	CLIENTINFO: () =>
@@ -20,9 +20,7 @@ export default <IrcEventHandler>function (irc, network) {
 	const lobby = network.getLobby();
 
 	irc.on("ctcp response", function (data) {
-		const shouldIgnore = network.ignoreList.some(function (entry) {
-			return Helper.compareHostmask(entry, data);
-		});
+		const shouldIgnore = network.isIgnoredUser(data);
 
 		if (shouldIgnore) {
 			return;
@@ -58,9 +56,7 @@ export default <IrcEventHandler>function (irc, network) {
 					return;
 				}
 
-				const shouldIgnore = network.ignoreList.some(function (entry) {
-					return Helper.compareHostmask(entry, data);
-				});
+				const shouldIgnore = network.isIgnoredUser(data);
 
 				if (shouldIgnore) {
 					return;
@@ -78,7 +74,6 @@ export default <IrcEventHandler>function (irc, network) {
 					type: MessageType.CTCP_REQUEST,
 					time: data.time,
 					from: new User({nick: target}),
-					// eslint-disable-next-line @typescript-eslint/restrict-plus-operands
 					hostmask: data.ident + "@" + data.hostname,
 					ctcpMessage: data.message,
 				});

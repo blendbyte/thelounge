@@ -2,9 +2,11 @@ import Chan from "../../models/chan";
 import Network from "../../models/network";
 import {PluginInputHandler} from "./index";
 
-import Msg, {MessageType} from "../../models/msg";
+import Msg from "../../models/msg";
 
 import Client from "../../client";
+import {MessageType} from "../../../shared/types/msg";
+import {ChanType} from "../../../shared/types/chan";
 
 const commands = ["mute", "unmute"];
 const allowDisconnected = true;
@@ -13,7 +15,8 @@ function args_to_channels(network: Network, args: string[]) {
 	const targets: Chan[] = [];
 
 	for (const arg of args) {
-		const target = network.channels.find((c) => c.name === arg);
+		const argLower = arg.toLowerCase();
+		const target = network.channels.find((c) => c.name.toLowerCase() === argLower);
 
 		if (target) {
 			targets.push(target);
@@ -24,7 +27,7 @@ function args_to_channels(network: Network, args: string[]) {
 }
 
 function change_mute_state(client: Client, target: Chan, valueToSet: boolean) {
-	if (target.type === "special") {
+	if (target.type === ChanType.SPECIAL) {
 		return;
 	}
 
@@ -41,6 +44,7 @@ const input: PluginInputHandler = function (network, chan, cmd, args) {
 
 	if (args.length === 0) {
 		change_mute_state(client, chan, valueToSet);
+		client.save();
 		return;
 	}
 
@@ -64,6 +68,8 @@ const input: PluginInputHandler = function (network, chan, cmd, args) {
 	for (const target of targets) {
 		change_mute_state(client, target, valueToSet);
 	}
+
+	client.save();
 };
 
 export default {

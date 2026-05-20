@@ -1,6 +1,5 @@
 import Config from "../config";
 import busboy, {BusboyHeaders} from "@fastify/busboy";
-import {v4 as uuidv4} from "uuid";
 import path from "path";
 import fs from "fs";
 import fileType from "file-type";
@@ -40,7 +39,7 @@ const uploadTokens = new Map();
 class Uploader {
 	constructor(socket: Socket) {
 		socket.on("upload:auth", () => {
-			const token = uuidv4();
+			const token = crypto.randomUUID();
 
 			socket.emit("upload:auth", token);
 
@@ -132,7 +131,7 @@ class Uploader {
 	}
 
 	static routeUploadFile(this: void, req: Request, res: Response) {
-		let busboyInstance: NodeJS.WritableStream | busboy | null | undefined;
+		let busboyInstance: busboy | null | undefined;
 		let uploadUrl: string | URL;
 		let randomName: string;
 		let destDir: fs.PathLike;
@@ -223,7 +222,6 @@ class Uploader {
 		try {
 			fs.mkdirSync(destDir, {recursive: true});
 		} catch (err: any) {
-			// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 			log.error(`Error ensuring ${destDir} exists for uploads: ${err.message}`);
 
 			return abortWithError(err);
@@ -324,7 +322,6 @@ class Uploader {
 			return "application/octet-stream";
 		} catch (e: any) {
 			if (e.code !== "ENOENT") {
-				// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 				log.warn(`Failed to read ${filePath}: ${e.message}`);
 			}
 		}

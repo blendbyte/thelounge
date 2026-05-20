@@ -1,24 +1,17 @@
 import _ from "lodash";
-import {v4 as uuidv4} from "uuid";
+import crypto from "crypto";
 import IrcFramework, {Client as IRCClient} from "irc-framework";
-import Chan, {ChanConfig, Channel, ChanType} from "./chan";
-import Msg, {MessageType} from "./msg";
+import Chan, {ChanConfig, Channel} from "./chan";
+import Msg from "./msg";
 import Prefix from "./prefix";
 import Helper, {Hostmask} from "../helper";
 import Config, {WebIRC} from "../config";
 import STSPolicies from "../plugins/sts";
 import ClientCertificate, {ClientCertificateType} from "../plugins/clientCertificate";
 import Client from "../client";
-
-/**
- * List of keys which should be sent to the client by default.
- */
-const fieldsForClient = {
-	uuid: true,
-	name: true,
-	nick: true,
-	serverOptions: true,
-};
+import {MessageType} from "../../shared/types/msg";
+import {ChanType} from "../../shared/types/chan";
+import {SharedNetwork} from "../../shared/types/network";
 
 type NetworkIrcOptions = {
 	host: string;
@@ -52,7 +45,7 @@ type NetworkStatus = {
 };
 
 export type IgnoreListItem = Hostmask & {
-	when?: number;
+	when: number;
 };
 
 type IgnoreList = IgnoreListItem[];
@@ -183,7 +176,7 @@ class Network {
 		});
 
 		if (!this.uuid) {
-			this.uuid = uuidv4();
+			this.uuid = crypto.randomUUID();
 		}
 
 		if (!this.name) {
@@ -347,7 +340,10 @@ class Network {
 
 		if (!this.sasl) {
 			delete this.irc.options.sasl_mechanism;
-			delete this.irc.options.account;
+			// irc-framework has a funny fallback where it uses nick + server pw
+			// in the sasl handshake, if account is undefined, so we need an empty
+			// object here to really turn it off
+			this.irc.options.account = {};
 		} else if (this.sasl === "external") {
 			this.irc.options.sasl_mechanism = "EXTERNAL";
 			this.irc.options.account = {};
@@ -428,16 +424,16 @@ class Network {
 		// Sync lobby channel name
 		this.getLobby().name = this.name;
 
+		if (!this.validate(client)) {
+			return;
+		}
+
 		if (this.name !== oldNetworkName) {
 			// Send updated network name to all connected clients
 			client.emit("network:name", {
 				uuid: this.uuid,
 				name: this.name,
 			});
-		}
-
-		if (!this.validate(client)) {
-			return;
 		}
 
 		if (this.irc) {
@@ -482,6 +478,10 @@ class Network {
 		this.channels.forEach((channel) => channel.destroy());
 	}
 
+	isIgnoredUser(data: Hostmask) {
+		return this.ignoreList.some((entry) => Helper.compareHostmask(entry, data));
+	}
+
 	setNick(this: Network, nick: string) {
 		this.nick = nick;
 		this.highlightRegex = new RegExp(
@@ -505,24 +505,17 @@ class Network {
 		}
 	}
 
-	getFilteredClone(lastActiveChannel?: number, lastMessage?: number) {
-		const filteredNetwork = Object.keys(this).reduce((newNetwork, prop) => {
-			if (prop === "channels") {
-				// Channels objects perform their own cloning
-				newNetwork[prop] = this[prop].map((channel) =>
-					channel.getFilteredClone(lastActiveChannel, lastMessage)
-				);
-			} else if (fieldsForClient[prop]) {
-				// Some properties that are not useful for the client are skipped
-				newNetwork[prop] = this[prop];
-			}
-
-			return newNetwork;
-		}, {}) as Network;
-
-		filteredNetwork.status = this.getNetworkStatus();
-
-		return filteredNetwork;
+	getFilteredClone(lastActiveChannel?: number, lastMessage?: number): SharedNetwork {
+		return {
+			uuid: this.uuid,
+			name: this.name,
+			nick: this.nick,
+			serverOptions: this.serverOptions,
+			status: this.getNetworkStatus(),
+			channels: this.channels.map((channel) =>
+				channel.getFilteredClone(lastActiveChannel, lastMessage)
+			),
+		};
 	}
 
 	getNetworkStatus() {
@@ -535,7 +528,7 @@ class Network {
 			const transport = this.irc.connection.transport;
 
 			if (transport.socket) {
-				const isLocalhost = transport.socket.remoteAddress === "127.0.0.1";
+				const isLocalhost = ["127.0.0.1", "::1"].includes(transport.socket.remoteAddress);
 				const isAuthorized = transport.socket.encrypted && transport.socket.authorized;
 
 				status.connected = transport.isConnected();
