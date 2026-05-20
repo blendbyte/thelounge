@@ -499,7 +499,7 @@ function initializeClient(
 				}
 
 				const rawMatch = event.message.match(/^\| (.*) \| (.*) \| (.*) \| (.*) \| (.*)\|$/);
-				log.debug('znchost:message', event.type, event.nick, event.message, rawMatch === null ? 'nope' : JSON.stringify(rawMatch));
+				log.debug('znchost:message', event.type ?? "", event.nick, event.message, rawMatch === null ? 'nope' : JSON.stringify(rawMatch));
 
 				if (rawMatch === null) {
 					return;
