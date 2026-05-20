@@ -172,6 +172,11 @@ interface ClientToServerEvents {
 	"history:clear": EventHandler<{target: number}>;
 
 	search: EventHandler<SearchQuery>;
+
+	"znc:getnetworks": (
+		data: {host: string; username: string; password: string},
+		cb: (result: {okay: boolean; error: string; networks: string[]}) => void
+	) => void;
 }
 
 interface InterServerEvents {}
