@@ -5,8 +5,10 @@ yarn-error.log*
 package-lock.json
 
 coverage/
-public/
+/public/
 packages/
 config.js
 vapid.json
 dist/
+test/public/
+client/public/fonts/*.woff*
