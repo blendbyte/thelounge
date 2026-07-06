@@ -82,6 +82,10 @@ export type UserConfig = {
 		isSecure?: boolean;
 	};
 	networks?: NetworkConfig[];
+	zncCredentials?: {
+		username: string;
+		password: string;
+	};
 };
 
 class Client {
@@ -104,6 +108,7 @@ class Client {
 	messageProvider?: SqliteMessageStorage;
 
 	fileHash!: string;
+	zncSyncTimer: NodeJS.Timeout | null = null;
 
 	constructor(manager: ClientManager, name?: string, config = {} as UserConfig) {
 		this.id = crypto.randomUUID();
@@ -216,6 +221,35 @@ class Client {
 			});
 
 			client.fileHash = client.manager.getDataToSave(client).newHash;
+		}
+
+		client.startZncSync();
+	}
+
+	startZncSync() {
+		if (!Config.values.znchost?.enabled || !this.config.zncCredentials) {
+			return;
+		}
+
+		this.stopZncSync();
+
+		const credentials = this.config.zncCredentials;
+		const client = this;
+
+		const doSync = () => {
+			import("./plugins/znc-sync")
+				.then(({syncNetworks}) => syncNetworks(client, credentials))
+				.catch((err: Error) => log.warn(`ZNC sync error for ${client.name}: ${err.message}`));
+		};
+
+		doSync();
+		this.zncSyncTimer = setInterval(doSync, 5 * 60 * 1000);
+	}
+
+	stopZncSync() {
+		if (this.zncSyncTimer !== null) {
+			clearInterval(this.zncSyncTimer);
+			this.zncSyncTimer = null;
 		}
 	}
 
@@ -335,6 +369,7 @@ class Client {
 			proxyPort: parseInt(args.proxyPort, 10),
 			proxyUsername: String(args.proxyUsername || ""),
 			proxyPassword: String(args.proxyPassword || ""),
+			znc: !!args.znc,
 		});
 	}
 
@@ -762,6 +797,8 @@ class Client {
 	}
 
 	quit(signOut?: boolean) {
+		this.stopZncSync();
+
 		const sockets = this.manager.sockets.sockets;
 		const room = sockets.adapter.rooms.get(this.id);
 

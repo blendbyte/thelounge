@@ -86,6 +86,7 @@ export type NetworkConfig = {
 	proxyEnabled: boolean;
 	highlightRegex?: string;
 	ignoreList: any[];
+	znc?: boolean;
 };
 
 class Network {
@@ -113,6 +114,7 @@ class Network {
 	proxyPassword!: string;
 	proxyEnabled!: boolean;
 	highlightRegex?: RegExp;
+	znc!: boolean;
 
 	irc?: IrcFramework.Client & {
 		options?: NetworkIrcOptions;
@@ -169,6 +171,8 @@ class Network {
 			proxyUsername: "",
 			proxyPassword: "",
 			proxyEnabled: false,
+
+			znc: false,
 
 			chanCache: [],
 			ignoreList: [],
@@ -637,6 +641,7 @@ class Network {
 			"proxyUsername",
 			"proxyEnabled",
 			"proxyPassword",
+			"znc",
 		]) as Network;
 
 		network.channels = this.channels

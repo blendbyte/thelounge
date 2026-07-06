@@ -18,7 +18,6 @@ import Identification from "./identification";
 import changelog from "./plugins/changelog";
 import inputs from "./plugins/inputs";
 import Auth from "./plugins/auth";
-import IrcFramework from "irc-framework";
 import {injectServerConfig} from "./plugins/html-config";
 
 import themes from "./plugins/packages/themes";
@@ -472,65 +471,19 @@ function initializeClient(
 	});
 
 	if (Config.values.znchost.enabled) {
-		socket.on("znc:getnetworks", (data, cb) => {
-			type Netdata = {
-				okay: boolean;
-				error: string;
-				networks: Array<string>;
-			};
-			const netdata: Netdata = {okay: false, error: "", networks: []};
+		// Trigger an immediate ZNC network sync (e.g. after user adds/removes a network in ZNC)
+		socket.on("znc:sync", () => {
+			const credentials = client.config.zncCredentials;
 
-			const irc = new IrcFramework.Client({});
-			irc.connect({
-				host: data.host + "." + Config.values.znchost.suffix,
-				port: Config.values.znchost.port,
-				tls: Config.values.znchost.tls,
-				nick: data.username,
-				username: data.username,
-				password: data.password,
-				version: false,
-				outgoing_addr: Config.values.bind,
-				auto_reconnect: false,
-				rejectUnauthorized: true,
-			});
-			irc.on("message", function (event) {
-				if (event.type !== "privmsg" && event.nick !== "*status") {
-					return;
-				}
+			if (!credentials) {
+				return;
+			}
 
-				const rawMatch = event.message.match(/^\| (.*) \| (.*) \| (.*) \| (.*) \| (.*)\|$/);
-				log.debug('znchost:message', event.type ?? "", event.nick, event.message, rawMatch === null ? 'nope' : JSON.stringify(rawMatch));
-
-				if (rawMatch === null) {
-					return;
-				}
-
-				const match = rawMatch.map(function (n) {
-					return n.trim();
-				});
-
-				if (match.length !== 6 || match[1] === "Network") {
-					return;
-				}
-
-				netdata.networks.push(match[1]);
-			});
-			irc.on("registered", function () {
-				log.debug('znchost:registered', 'listnetworks sent');
-				irc.say("*status", "listnetworks");
-				setTimeout(() => irc.quit(), 1000);
-			});
-			irc.on("close", function (event) {
-				log.debug('znchost:closed', String(netdata.networks.length), JSON.stringify(netdata.networks));
-				if (event === true || netdata.networks.length > 0) {
-					netdata.okay = true;
-					cb(netdata);
-				} else {
-					netdata.okay = false;
-					netdata.error = "Unable to connect. Maybe you are using a wrong password?";
-					cb(netdata);
-				}
-			});
+			import("./plugins/znc-sync")
+				.then(({syncNetworks}) => syncNetworks(client, credentials))
+				.catch((err: Error) =>
+					log.warn(`ZNC manual sync error for ${client.name}: ${err.message}`)
+				);
 		});
 	}
 
