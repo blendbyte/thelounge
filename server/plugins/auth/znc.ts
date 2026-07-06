@@ -22,6 +22,7 @@ const zncAuth: AuthHandler = (manager, client, user, password, callback) => {
 
 			if (!client) {
 				// First login — auto-provision the user account with credentials included
+				fs.mkdirSync(Config.getUsersPath(), {recursive: true});
 				manager.addUser(user, null, true);
 
 				const userPath = Config.getUserConfigPath(user);
