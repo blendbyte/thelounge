@@ -532,7 +532,7 @@ function initializeClient(
 		}
 	});
 
-	if (!Config.values.public && !Config.values.ldap.enable) {
+	if (!Config.values.public && !Config.values.ldap.enable && !Config.values.znchost?.enabled) {
 		socket.on("change-password", (data) => {
 			if (_.isPlainObject(data)) {
 				const old = data.old_password;
