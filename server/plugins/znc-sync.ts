@@ -22,11 +22,19 @@ export function validateZncCredentials(credentials: ZncCredentials): Promise<boo
 			}
 		};
 
-		const timeout = setTimeout(() => done(false), 15000);
+		const timeout = setTimeout(() => {
+			log.warn(`ZNC validate: timed out for ${credentials.username}`);
+			done(false);
+		}, 15000);
+
+		const zncHost = credentials.username + "." + Config.values.znchost.suffix;
+		log.info(
+			`ZNC validate: connecting to ${zncHost}:${Config.values.znchost.port} tls=${Config.values.znchost.tls}`
+		);
 
 		const irc = new IrcFramework.Client({});
 		irc.connect({
-			host: credentials.username + "." + Config.values.znchost.suffix,
+			host: zncHost,
 			port: Config.values.znchost.port,
 			tls: Config.values.znchost.tls,
 			nick: credentials.username,
@@ -35,16 +43,24 @@ export function validateZncCredentials(credentials: ZncCredentials): Promise<boo
 			version: false,
 			outgoing_addr: Config.values.bind,
 			auto_reconnect: false,
-			rejectUnauthorized: true,
+			rejectUnauthorized: false,
 		});
 
 		irc.on("registered", function () {
+			log.info(`ZNC validate: registered for ${credentials.username}`);
 			clearTimeout(timeout);
 			done(true);
 			setTimeout(() => irc.quit(), 100);
 		});
 
-		irc.on("close", function () {
+		irc.on("error", function (err) {
+			log.warn(`ZNC validate: connection error for ${credentials.username}: ${String(err)}`);
+		});
+
+		irc.on("close", function (event) {
+			log.info(
+				`ZNC validate: connection closed for ${credentials.username}, cleanClose=${JSON.stringify(event)}, alreadyResolved=${resolved}`
+			);
 			clearTimeout(timeout);
 			done(false);
 		});
@@ -66,7 +82,7 @@ export function fetchZncNetworks(credentials: ZncCredentials): Promise<string[]>
 			version: false,
 			outgoing_addr: Config.values.bind,
 			auto_reconnect: false,
-			rejectUnauthorized: true,
+			rejectUnauthorized: false,
 		});
 
 		irc.on("message", function (event) {
