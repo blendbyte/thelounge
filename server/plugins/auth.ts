@@ -8,7 +8,9 @@ export type AuthHandler = (
 	client: Client,
 	user: string,
 	password: string,
-	callback: (success: boolean) => void
+	callback: (success: boolean) => void,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	socket?: any
 ) => void;
 
 // The order defines priority: the first available plugin is used.

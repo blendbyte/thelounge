@@ -85,6 +85,7 @@ export type UserConfig = {
 	zncCredentials?: {
 		username: string;
 		password: string;
+		host?: string;
 	};
 };
 

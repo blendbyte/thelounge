@@ -5,14 +5,22 @@ import Config from "../../config";
 import type {AuthHandler} from "../auth";
 import {validateZncCredentials} from "../znc-sync";
 
-const zncAuth: AuthHandler = (manager, client, user, password, callback) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const zncAuth: AuthHandler = (manager, client, user, password, callback, socket?: any) => {
 	if (!user || !password) {
 		return callback(false);
 	}
 
-	log.info(`ZNC auth attempt for ${user}`);
+	// Derive ZNC host from the HTTP Host header of the socket connection.
+	// In the original public-mode flow the browser sent data.host (URL subdomain).
+	// In private mode we extract it from socket.handshake so the ZNC host always
+	// matches the TL URL (e.g. staff.znchost.com), not the IRC username.
+	const requestHost: string = socket?.handshake?.headers?.host ?? "";
+	const zncHost = requestHost.split(":")[0] || user + "." + Config.values.znchost.suffix;
 
-	validateZncCredentials({username: user, password})
+	log.info(`ZNC auth attempt for ${user} via ${zncHost}`);
+
+	validateZncCredentials({username: user, password, host: zncHost})
 		.then((valid) => {
 			if (!valid) {
 				log.warn(`ZNC auth failed for ${user}`);
@@ -27,11 +35,11 @@ const zncAuth: AuthHandler = (manager, client, user, password, callback) => {
 
 				const userPath = Config.getUserConfigPath(user);
 				const config = JSON.parse(fs.readFileSync(userPath, "utf-8"));
-				config.zncCredentials = {username: user, password};
+				config.zncCredentials = {username: user, password, host: zncHost};
 				fs.writeFileSync(userPath, JSON.stringify(config, null, "\t"), {mode: 0o600});
 			} else {
 				// Existing user — update stored credentials (handles password changes)
-				client.config.zncCredentials = {username: user, password};
+				client.config.zncCredentials = {username: user, password, host: zncHost};
 				client.save();
 			}
 

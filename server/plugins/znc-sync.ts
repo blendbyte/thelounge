@@ -9,6 +9,7 @@ import ClientCertificate from "./clientCertificate";
 export type ZncCredentials = {
 	username: string;
 	password: string;
+	host?: string; // ZNC hostname; derived from socket URL at login, stored in user config
 };
 
 export function validateZncCredentials(credentials: ZncCredentials): Promise<boolean> {
@@ -27,7 +28,7 @@ export function validateZncCredentials(credentials: ZncCredentials): Promise<boo
 			done(false);
 		}, 15000);
 
-		const zncHost = credentials.username + "." + Config.values.znchost.suffix;
+		const zncHost = credentials.host || credentials.username + "." + Config.values.znchost.suffix;
 		log.info(
 			`ZNC validate: connecting to ${zncHost}:${Config.values.znchost.port} tls=${Config.values.znchost.tls}`
 		);
@@ -71,9 +72,10 @@ export function fetchZncNetworks(credentials: ZncCredentials): Promise<string[]>
 	return new Promise((resolve, reject) => {
 		const networks: string[] = [];
 
+		const zncHost = credentials.host || credentials.username + "." + Config.values.znchost.suffix;
 		const irc = new IrcFramework.Client({});
 		irc.connect({
-			host: credentials.username + "." + Config.values.znchost.suffix,
+			host: zncHost,
 			port: Config.values.znchost.port,
 			tls: Config.values.znchost.tls,
 			nick: credentials.username,
@@ -158,10 +160,11 @@ export async function syncNetworks(client: Client, credentials: ZncCredentials):
 		}`
 	);
 
+	const zncHost = credentials.host || credentials.username + "." + Config.values.znchost.suffix;
 	for (const name of toAdd) {
 		client.connectToNetwork({
 			name,
-			host: credentials.username + "." + Config.values.znchost.suffix,
+			host: zncHost,
 			port: Config.values.znchost.port,
 			tls: Config.values.znchost.tls,
 			rejectUnauthorized: true,
